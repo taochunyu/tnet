@@ -24,8 +24,6 @@ class StringPiece {
     : _strp(nullptr), _length(0) {}
   StringPiece(const char *str)
     : _strp(str), _length(static_cast<int>(strlen(str))) {}
-  // StringPiece(const unsigned char *str)
-  //   : _strp(reinterpret_cast<const char*>(str)), _length(static_cast<int>(strlen(_strp))) {}
   StringPiece(const std::string &str)
     : _strp(str.data()), _length(static_cast<int>(str.size())) {}
   StringPiece(const char *offset, int len)

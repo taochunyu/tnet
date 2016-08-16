@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <tnet/base/StringPiece.h>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
