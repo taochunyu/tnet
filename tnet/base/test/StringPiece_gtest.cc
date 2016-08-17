@@ -89,7 +89,12 @@ TEST_F(StringPieceTest, RemoveTest) {
     EXPECT_EQ(*(sps[i].end() - 1), testString[lenTestString - 3 - 1]);
   }
 }
+
+#ifndef GTEST_ALL
+
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+#endif  // GTEST_ALL

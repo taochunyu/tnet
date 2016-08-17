@@ -53,9 +53,10 @@ void tnet::LogStream::formatIntger(T v) {
     _buffer.add(len);
   }
 }
+
 namespace tnet {
 
-LogStream& LogStream::operator<<(bool v) {
+tnet::LogStream& tnet::LogStream::operator<<(bool v) {
   if (v) {
     _buffer.append("true", 4);
   } else {
@@ -63,6 +64,7 @@ LogStream& LogStream::operator<<(bool v) {
   }
   return *this;
 }
+
 LogStream& LogStream::operator<<(short v) {
   *this << static_cast<int>(v);
   return *this;
@@ -144,6 +146,7 @@ LogStream& LogStream::operator<<(const Buffer &v) {
   *this << v.toStringPiece();
   return *this;
 }
+
 
 template<typename T>
 Fmt::Fmt(const char *fmt, T value) {
