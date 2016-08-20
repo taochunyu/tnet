@@ -13,6 +13,10 @@ thread_local char t_errnobuf[512];
 thread_local char t_time[32];
 thread_local time_t t_lastSecond;
 
+int strerror_tl(int savedErrno) {
+  return strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
+}
+
 Logger::LogLevel initLogLevel() {
   if (::getenv("TNET_LOG_TRACE")) {
     return Logger::TRACE;

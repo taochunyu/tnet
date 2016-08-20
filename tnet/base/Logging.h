@@ -66,6 +66,8 @@ Logger::LogLevel Logger::logLevel() {
   return g_loglevel;
 }
 
+int strerror_tl(int savedErrno);
+
 }  // namespace tnet
 
 #endif  // TNET_BASE_LOGGONG_H
