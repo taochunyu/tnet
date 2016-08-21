@@ -1,5 +1,5 @@
-#ifndef TNET_BASE_LOGGONG_H
-#define TNET_BASE_LOGGONG_H
+#ifndef TNET_BASE_LOGGING_H
+#define TNET_BASE_LOGGING_H
 
 #include <tnet/base/LogStream.h>
 #include <tnet/base/TimeStamp.h>
@@ -70,4 +70,4 @@ int strerror_tl(int savedErrno);
 
 }  // namespace tnet
 
-#endif  // TNET_BASE_LOGGONG_H
+#endif  // TNET_BASE_LOGGING_H

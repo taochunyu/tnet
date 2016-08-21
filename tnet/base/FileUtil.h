@@ -21,6 +21,7 @@ class ReadSmallFile : public nocopyable {
   int readToBuffer(int *size);
   const char* buffer() { return _buf; }
   static const int kBufferSize = 64 * 1024;
+  int err() { return _err; }
  private:
   int _fd;
   int _err;
