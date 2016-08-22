@@ -1,5 +1,5 @@
 #include <tnet/base/FileUtil.h>
-// #include <tnet/base/Logging.h>
+#include <tnet/base/Logging.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>

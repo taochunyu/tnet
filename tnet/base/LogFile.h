@@ -13,7 +13,7 @@ namespace FileUtil {
 class AppendFile;
 }  // namespace tnet
 
-class LogFile : public tnet::nocopyable {
+class LogFile : tnet::nocopyable {
  public:
   LogFile(
     const std::string &basename,
@@ -39,7 +39,7 @@ class LogFile : public tnet::nocopyable {
   time_t _startOfPeriod;
   time_t _lastRoll;
   time_t _lastFlush;
-  std::unique_ptr<FileUtil::AppendFile> _file;  
+  std::unique_ptr<FileUtil::AppendFile> _file;
 };
 
 }  // namespace tnet

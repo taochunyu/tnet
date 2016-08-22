@@ -4,6 +4,7 @@
 #include <tnet/base/LogStream.h>
 #include <tnet/base/TimeStamp.h>
 #include <functional>
+#include <cstdio>
 
 namespace tnet {
 
@@ -62,7 +63,7 @@ class Logger {
 };
 
 extern Logger::LogLevel g_loglevel;
-Logger::LogLevel Logger::logLevel() {
+inline Logger::LogLevel Logger::logLevel() {  // must be inline
   return g_loglevel;
 }
 
