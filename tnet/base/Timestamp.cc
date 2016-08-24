@@ -12,19 +12,19 @@ namespace tnet {
 
 std::string Timestamp::toString() const {
   char buf[32] = {0};
-  int64_t seconds = _microSecondsSinceEpoch / kMicroSecondsSinceEpoch;
-  int64_t microSeconds = _microSecondsSinceEpoch % kMicroSecondsSinceEpoch;
+  int64_t seconds = _microSecondsSinceEpoch / kMicroSecondsPerSecond;
+  int64_t microSeconds = _microSecondsSinceEpoch % kMicroSecondsPerSecond;
   snprintf(buf, sizeof(buf) - 1, "%" PRId64 "%.6" PRId64 "", seconds, microSeconds);
   return std::string(buf);
 }
 
 std::string Timestamp::toFormattedString(bool showMicroSeconds) const {
   char buf[32] = {0};
-  time_t seconds = microSecondsSinceEpoch() / kMicroSecondsSinceEpoch;
+  time_t seconds = microSecondsSinceEpoch() / kMicroSecondsPerSecond;
   struct tm tm_time;
   gmtime_r(&seconds, &tm_time);
   if (showMicroSeconds) {
-    int microSeconds = microSecondsSinceEpoch() % kMicroSecondsSinceEpoch;
+    int microSeconds = microSecondsSinceEpoch() % kMicroSecondsPerSecond;
     snprintf(
       buf, sizeof(buf), "%4d%02d%02d %02d:%02d:%02d.%6d",
       tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
@@ -45,7 +45,7 @@ Timestamp Timestamp::now() {
   struct timeval tv;
   gettimeofday(&tv, nullptr);
   int64_t seconds = tv.tv_sec;
-  return Timestamp(seconds * kMicroSecondsSinceEpoch + tv.tv_usec);
+  return Timestamp(seconds * kMicroSecondsPerSecond + tv.tv_usec);
 }
 
 }

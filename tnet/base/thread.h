@@ -3,11 +3,12 @@
 
 #include <tnet/base/Types.h>
 #include <tnet/base/nocopyable.h>
+#include <sys/types.h>
+#include <pthread.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <atomic>
-#include <thread>
 
 namespace tnet {
 
@@ -18,7 +19,7 @@ class Thread : tnet::nocopyable {
   explicit Thread(ThreadFunc&&, const std::string&);
   ~Thread();
   void start();
-  void join();
+  int join();
   bool started() const { return _started; }
   static int numCreated() { return _numCreated.load(std::memory_order_relaxed); }
  private:
@@ -26,7 +27,8 @@ class Thread : tnet::nocopyable {
   void setDefaultName();
   bool _started;
   bool _joined;
-  std::thread _thread;
+  pthread_t _threadId;
+  std::shared_ptr<pid_t> _tid;
   ThreadFunc _func;
   std::string _name;
 };

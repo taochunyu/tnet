@@ -19,7 +19,7 @@ class Timestamp : tnet::copyable {
   bool valid() const { return _microSecondsSinceEpoch > 0; }
   int64_t microSecondsSinceEpoch() const { return _microSecondsSinceEpoch; }
   time_t secondsSinceEpoch() const {
-    return _microSecondsSinceEpoch / kMicroSecondsSinceEpoch;
+    return _microSecondsSinceEpoch / kMicroSecondsPerSecond;
   }
   static Timestamp now();
   static Timestamp invalid() { return Timestamp(); }
@@ -27,9 +27,9 @@ class Timestamp : tnet::copyable {
     return fromUnixTime(t, 0);
   }
   static Timestamp fromUnixTime(time_t t, int microSeconds) {
-    return Timestamp(static_cast<int64_t>(t) * kMicroSecondsSinceEpoch + microSeconds);
+    return Timestamp(static_cast<int64_t>(t) * kMicroSecondsPerSecond + microSeconds);
   }
-  static const int kMicroSecondsSinceEpoch = 1000 * 1000;
+  static const int kMicroSecondsPerSecond = 1000 * 1000;
  private:
   int64_t _microSecondsSinceEpoch;
 };
@@ -60,11 +60,11 @@ inline bool operator>=(Timestamp &lhs, Timestamp &rhs) {
 
 inline double timeDifference(Timestamp &high, Timestamp &low) {
   int64_t diff = high.microSecondsSinceEpoch() - low.microSecondsSinceEpoch();
-  return static_cast<double>(diff) / Timestamp::kMicroSecondsSinceEpoch;
+  return static_cast<double>(diff) / Timestamp::kMicroSecondsPerSecond;
 }
 
 inline Timestamp addTime(Timestamp timestamp, double seconds) {
-  int64_t delta = static_cast<int64_t>(seconds * Timestamp::kMicroSecondsSinceEpoch);
+  int64_t delta = static_cast<int64_t>(seconds * Timestamp::kMicroSecondsPerSecond);
   return Timestamp(timestamp.microSecondsSinceEpoch() + delta);
 }
 

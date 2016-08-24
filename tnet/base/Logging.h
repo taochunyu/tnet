@@ -36,7 +36,7 @@ class Logger {
   Logger(SourceFile file, int line);
   Logger(SourceFile file, int line, LogLevel level);
   Logger(SourceFile file, int line, LogLevel level, const char *func);
-  Logger(SourceFile file, int line, LogLevel level, bool toAbort);
+  Logger(SourceFile file, int line, bool toAbort);
   ~Logger();
 
   LogStream& stream() { return _impl._stream; }
@@ -68,6 +68,30 @@ inline Logger::LogLevel Logger::logLevel() {  // must be inline
 }
 
 int strerror_tl(int savedErrno);
+
+
+#define LOG_TRACE if (tnet::Logger::logLevel() <= tnet::Logger::TRACE) \
+  tent::Logger(__FILE__, __LINE__, tnet::Logger::TRACE, __func__).stream()
+#define LOG_DEBUG if (tnet::Logger::logLevel() <= tnet::Logger::DEBUG) \
+  tnet::Logger(__FILE__, __LINE__, tnet::Logger::DEBUG, __func__).stream()
+#define LOG_INFO if (tnet::Logger::logLevel() <= tnet::Logger::INFO) \
+  tnet::Logger(__FILE__, __LINE__, tnet::Logger::INFO, __func__).stream()
+#define LOG_WARN tent::Logger(__FILE__, __LINE__, tnet::Logger::WARN, __func__).stream()
+#define LOG_ERROR tnet::Logger(__FILE__, __LINE__, tnet::Logger::ERROR, __func__).stream()
+#define LOG_FATAL tnet::Logger(__FILE__, __LINE__, tnet::Logger::FATAL, __func__).stream()
+#define LOG_SYSERR tnet::Logger(__FILE__, __LINE__, false).stream()
+#define LOG_SYSFATAL tnet::Logger(__FILE__, __LINE__, true).stream()
+
+#define CHECK_NOTNULL(val) \
+  ::tnet::CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be Not NULL", (val))
+
+template<typename T>
+T* CheckNotNull(Logger::SourceFile file, int line, const char *names, T *ptr) {
+  if (ptr == nullptr) {
+    Logger(file, line, Logger::FATAL).stream() << names;
+  }
+  return ptr;
+}
 
 }  // namespace tnet
 
