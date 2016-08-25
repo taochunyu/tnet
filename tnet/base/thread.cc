@@ -111,6 +111,20 @@ void CurrentThread::sleepUsec(int64_t usec) {
   ::nanosleep(&ts, nullptr);
 }
 
+std::atomic<int> Thread::_numCreated = ATOMIC_VAR_INIT(0);  // 不初始化会链接错误
+
+Thread::Thread(const ThreadFunc &func)
+  : _started(false), _joined(false),  _func(func)
+{
+  setDefaultName();
+}
+
+Thread::Thread(ThreadFunc &&func)
+  : _started(false), _joined(false), _func(std::move(func))
+{
+  setDefaultName();
+}
+
 Thread::Thread(const ThreadFunc &func, const std::string &name)
   : _started(false), _joined(false),  _func(func), _name(name)
 {
@@ -130,7 +144,7 @@ Thread::~Thread() {
 }
 
 void Thread::setDefaultName() {
-  _numCreated.fetch_add(1, std::memory_order_relaxed);
+  std::atomic_fetch_add(&_numCreated, 1);
   int num = numCreated();
   if (_name.empty()) {
     char buf[32];

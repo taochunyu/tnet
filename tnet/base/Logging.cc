@@ -79,9 +79,9 @@ Logger::Impl::Impl(LogLevel level, int savedErrno, const SourceFile &file, int l
 void Logger::Impl::formatTime() {
   int64_t microSecondsSinceEpoch = _time.microSecondsSinceEpoch();
   time_t seconds
-    = static_cast<time_t>(microSecondsSinceEpoch / Timestamp::kMicroSecondsSinceEpoch);
+    = static_cast<time_t>(microSecondsSinceEpoch / Timestamp::kMicroSecondsPerSecond);
   int microSeconds
-    = static_cast<int>(microSecondsSinceEpoch % Timestamp::kMicroSecondsSinceEpoch);
+    = static_cast<int>(microSecondsSinceEpoch % Timestamp::kMicroSecondsPerSecond);
   if (seconds != t_lastSecond) {
     t_lastSecond = seconds;
     struct tm tm_time;
@@ -113,7 +113,7 @@ Logger::Logger(SourceFile file, int line, LogLevel level, const char *func)
   _impl._stream << func << ' ';
 }
 
-Logger::Logger(SourceFile file, int line, LogLevel level, bool toAbort)
+Logger::Logger(SourceFile file, int line, bool toAbort)
   : _impl(toAbort ? FATAL : ERROR, errno, file, line) {}
 
 Logger::~Logger() {

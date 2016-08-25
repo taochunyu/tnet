@@ -15,13 +15,15 @@ namespace tnet {
 class Thread : tnet::nocopyable {
  public:
   using ThreadFunc = std::function<void()>;
+  explicit Thread(const ThreadFunc&);
+  explicit Thread(ThreadFunc&&);
   explicit Thread(const ThreadFunc&, const std::string&);
   explicit Thread(ThreadFunc&&, const std::string&);
   ~Thread();
   void start();
   int join();
   bool started() const { return _started; }
-  static int numCreated() { return _numCreated.load(std::memory_order_relaxed); }
+  static int numCreated() { return std::atomic_load(&_numCreated); }
  private:
   static std::atomic<int> _numCreated;
   void setDefaultName();

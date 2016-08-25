@@ -14,7 +14,7 @@ class Logger {
   class SourceFile {
    public:
     template<int N>
-    SourceFile(const char (&arr)[N]) : _data(arr), _size(N - 1) { // arr: ref array
+    SourceFile(const char (&arr)[N]) : _data(arr), _size(N - 1) { // arr: ref of array
       const char* slash = strrchr(_data, '/');  // return pointer to last occurrence of '/'
       if (slash) {
         _data = slash + 1;
