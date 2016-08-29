@@ -156,8 +156,8 @@ void Thread::setDefaultName() {
 void Thread::start() {
   assert(!_started);
   _started = true;
-  std::unique_ptr<detail::ThreadData> data(new detail::ThreadData(_func, _name, _tid));
-  if (::pthread_create(&_threadId, nullptr, &detail::startThread, data.get())) {
+  auto data = new detail::ThreadData(_func, _name, _tid);
+  if (::pthread_create(&_threadId, nullptr, &detail::startThread, data)) {
     _started = false;
     LOG_SYSFATAL << "Failed in pthread_create";
   }
@@ -168,6 +168,7 @@ int Thread::join() {
   assert(!_joined);
   _joined = true;
   return ::pthread_join(_threadId, nullptr);
+
 }
 
 }  // namespace tnet

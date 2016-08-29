@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string>
+#include <functional>
 
 class ThreadTest : public testing::Test {
  protected:
@@ -40,7 +41,6 @@ class ThreadTest : public testing::Test {
 
 TEST_F(ThreadTest, CreateTest) {
   printf("pid = %d, tid = %d\n", ::getpid(), tnet::CurrentThread::tid());
-
   tnet::Thread t1(threadFunc1);
   t1.start();
   t1.join();
@@ -70,6 +70,7 @@ TEST_F(ThreadTest, CreateTest) {
   }
   mySleep(2);
   printf("number of created threads %d\n", tnet::Thread::numCreated());
+
 }
 
 #ifndef GTEST_ALL
