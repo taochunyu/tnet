@@ -93,7 +93,7 @@ void Logger::Impl::formatTime() {
     );
     assert(len == 17);
     (void)len;
-    Fmt us(".%06dZ", microSeconds);
+    Fmt us(".%06dZ ", microSeconds);
     assert(us.length() == 9);
     _stream << T(t_time, 17) << T(us.data(), 9);
   }

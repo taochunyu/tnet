@@ -71,12 +71,12 @@ int strerror_tl(int savedErrno);
 
 
 #define LOG_TRACE if (tnet::Logger::logLevel() <= tnet::Logger::TRACE) \
-  tent::Logger(__FILE__, __LINE__, tnet::Logger::TRACE, __func__).stream()
+  tnet::Logger(__FILE__, __LINE__, tnet::Logger::TRACE, __func__).stream()
 #define LOG_DEBUG if (tnet::Logger::logLevel() <= tnet::Logger::DEBUG) \
   tnet::Logger(__FILE__, __LINE__, tnet::Logger::DEBUG, __func__).stream()
 #define LOG_INFO if (tnet::Logger::logLevel() <= tnet::Logger::INFO) \
   tnet::Logger(__FILE__, __LINE__, tnet::Logger::INFO, __func__).stream()
-#define LOG_WARN tent::Logger(__FILE__, __LINE__, tnet::Logger::WARN, __func__).stream()
+#define LOG_WARN tnet::Logger(__FILE__, __LINE__, tnet::Logger::WARN, __func__).stream()
 #define LOG_ERROR tnet::Logger(__FILE__, __LINE__, tnet::Logger::ERROR, __func__).stream()
 #define LOG_FATAL tnet::Logger(__FILE__, __LINE__, tnet::Logger::FATAL, __func__).stream()
 #define LOG_SYSERR tnet::Logger(__FILE__, __LINE__, false).stream()

@@ -72,12 +72,3 @@ TEST_F(ThreadTest, CreateTest) {
   printf("number of created threads %d\n", tnet::Thread::numCreated());
 
 }
-
-#ifndef GTEST_ALL
-
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
-
-#endif  // GTEST_ALL

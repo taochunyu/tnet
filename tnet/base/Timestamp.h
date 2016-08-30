@@ -58,7 +58,7 @@ inline bool operator>=(Timestamp &lhs, Timestamp &rhs) {
   return lhs.microSecondsSinceEpoch() >= rhs.microSecondsSinceEpoch();
 }
 
-inline double timeDifference(Timestamp &high, Timestamp &low) {
+inline double timeDifference(const Timestamp &high, const Timestamp &low) {
   int64_t diff = high.microSecondsSinceEpoch() - low.microSecondsSinceEpoch();
   return static_cast<double>(diff) / Timestamp::kMicroSecondsPerSecond;
 }
