@@ -37,7 +37,11 @@ void ThreadPool::start(int numThreads) {
 
 void ThreadPool::stop() {
   MutexLockGuard lck(_mtx);
+  printf("stop\n");
   _running = false;
+  if (!_running) {
+    printf("unrunning\n");
+  }
   _notEmpty.notifyAll();
   for_each(_threads.begin(), _threads.end(),
     [](std::shared_ptr<Thread> p) { p -> join(); });
@@ -79,8 +83,13 @@ void ThreadPool::run(Task &&task) {
 ThreadPool::Task ThreadPool::take() {
   MutexLockGuard lck(_mtx);
   // always use a while-loop, due to spurious wakeup
+  printf("%d is taking\n", CurrentThread::tid());
   while (_queue.empty() && _running) {
+    printf("%d will wait\n", CurrentThread::tid());
     _notEmpty.wait();
+    if (!_running) {
+      printf("unrunning\n");
+    }
   }
   Task task;
   if (!_queue.empty()) {
@@ -89,6 +98,9 @@ ThreadPool::Task ThreadPool::take() {
     if (_maxQueueSize > 0) {
       _notFull.notify();
     }
+  }
+  if (!_running) {
+    printf("notask\n");
   }
   return task;
 }
@@ -104,10 +116,17 @@ void ThreadPool::runInThread() {
       _threadInitCallback();
     }
     while (_running) {
+      printf("%d is running\n", CurrentThread::tid());
+      printf("hi1\n");
       Task task(take());
+      printf("hi2\n");
       if (task) {
+        printf("task\n");
         task();
       }
+    }
+    if (!_running) {
+      printf("unrunning\n");
     }
   } catch (const Exception &ex) {
     fprintf(stderr, "Exception caught in ThreadPool %s\n", _name.c_str());

@@ -14,14 +14,15 @@ class CountDownLatch : tnet::nocopyable {
   void wait() {
     MutexLockGuard lck(_mutex);
     while (_count > 0) {
-      printf("hello\n");
       _condition.wait();
     }
   }
   void countDown() {
     MutexLockGuard lck(_mutex);
+    printf("hello\n");
     --_count;
     if (_count == 0) {
+      printf("world\n");
       _condition.notifyAll();
     }
   }
