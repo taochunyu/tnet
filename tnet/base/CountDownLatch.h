@@ -19,10 +19,8 @@ class CountDownLatch : tnet::nocopyable {
   }
   void countDown() {
     MutexLockGuard lck(_mutex);
-    printf("hello\n");
     --_count;
     if (_count == 0) {
-      printf("world\n");
       _condition.notifyAll();
     }
   }

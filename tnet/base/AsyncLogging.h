@@ -1,0 +1,6 @@
+#ifndef TNET_ASYNC_LOGGING_H
+#define TNET_ASYNC_LOGGING_H
+
+
+
+#endif  // TNET_ASYNC_LOGGING_H

@@ -25,15 +25,15 @@ class ThreadPoolTest : public testing::Test {
     ThreadPool pool("MainThreadPool");
     pool.setMaxQueueSize(maxSize);
     pool.start(5);
-    /*LOG_WARN << "Adding";
+    LOG_WARN << "Adding";
     pool.run(print);
     pool.run(print);
     for (int i = 0; i < 100; i++) {
       char buf[32];
-      snprintf(buf, sizeof buf, "task %d", i);
+      snprintf(buf, sizeof buf, "task %d", i + 1);
       pool.run([buf]{ printString(buf); });
     }
-    LOG_WARN << "Done";*/
+    LOG_WARN << "Done";
     CountDownLatch latch(1);
     pool.run([&latch] { latch.countDown(); });
     latch.wait();
