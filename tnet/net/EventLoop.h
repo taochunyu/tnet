@@ -40,6 +40,7 @@ class EventLoop : tnet::nocopyable {
   bool isInLoopThread() const {
     return _threadId == CurrentThread::tid();
   }
+  static EventLoop* getEventLoopOfCurrentThread();
  private:
    void abortNotInLoopThread();
    bool _looping;
