@@ -1,7 +1,8 @@
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/Logging.h>
+#include <tnet/net/Channel.h>
+#include <tnet/net/Poller.h>
 #include <assert.h>
-#include <poll.h>
 
 using namespace tnet;
 using namespace tnet::net;
@@ -32,9 +33,26 @@ void EventLoop::loop() {
   assert(!_looping);
   assertInLoopThread();
   _looping = true;
-  ::poll(nullptr, 0, 5 * 1000);
-  LOG_TRACE << "EventLoop " << this << " stop looping";
-  _looping = false;
+  _quit = false;
+  while (!_quit) {
+    _activeChannels.clear();
+    _poller -> poll(kPollTimeMs, &_activeChannels);
+    for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
+      (*it) -> handleEvent();
+    }
+    LOG_TRACE << "EventLoop " << this << " stop looping";
+    _looping = false;
+  }
+}
+
+void EventLoop::quit() {
+  _quit = true;
+}
+
+void EventLoop::updateChannel(Channel* channel) {
+  assert(channel -> ownerLoop() == this);
+  assertInLoopThread();
+  _poller -> updateChannel(channel);
 }
 
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {
