@@ -35,7 +35,7 @@ void PollPoller::fillActiveChannels(int numEvents,
                                     ChannelList* activeChannels) const {
   for (auto pfd = _pollfds.cbegin();
        pfd != _pollfds.cend() && numEvents > 0; pfd++) {
-    if (pfd -> revents > 0) {
+    if (pfd->revents > 0) {
       --numEvents;
       auto ch = _channels.find(pfd -> fd);
       assert(ch != _channels.end());

@@ -1,6 +1,11 @@
 #include <tnet/net/Channel.h>
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/Logging.h>
+#include <poll.h>
+
+#ifndef POLLRDHUP
+  const int POLLRDHUP = 0;
+#endif
 
 using namespace tnet;
 using namespace tnet::net;
@@ -12,10 +17,10 @@ const int Channel::kWriteEvent = POLLOUT;
 Channel::Channel(EventLoop* loop, int fd)
   : _loop(loop), _fd(fd), _events(0), _revents(0), _index(-1) {}
 void Channel::handleEvent() {
-  if (_revents & POLLNVAl) {
-    Log_WARN << "Channel::handle_event() POLLNVAl";
+  if (_revents & POLLNVAL) {
+    LOG_WARN << "Channel::handle_event() POLLNVAL";
   }
-  if (_revents & (POLLERR | POLLNVAl)) {
+  if (_revents & (POLLERR | POLLNVAL)) {
     if (_errorCallback) _errorCallback();
   }
   if (_revents & (POLLIN | POLLPRI | POLLRDHUP)) {
