@@ -1,2 +1,2 @@
 add_subdirectory(base base)
-#add_subdirectory(net net)
+add_subdirectory(net net)

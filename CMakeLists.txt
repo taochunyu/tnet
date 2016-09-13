@@ -13,12 +13,12 @@ set(CXX_FLAGS
  )
 
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -finline-limit=1000 -DNDEBUG")
 set(PROJECT_SOURCE_DIR /Users/taochunyu/worktable/tnet)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
-add_subdirectory(tnet/base)
+add_subdirectory(tnet)
 add_subdirectory(whenDeveloping)
 # add_subdirectory(example example)

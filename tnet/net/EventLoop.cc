@@ -10,6 +10,7 @@ using namespace tnet::net;
 namespace {
 
 thread_local EventLoop *t_loopInThisThread = 0;
+const int kPollTimeMs = 10000;
 
 }  // namespace
 
