@@ -59,3 +59,9 @@ void EventLoop::updateChannel(Channel* channel) {
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {
   return t_loopInThisThread;
 }
+
+void EventLoop::abortNotInLoopThread() {
+  LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
+            << " was created in threadId_ = " << _threadId
+            << ", current thread id = " <<  CurrentThread::tid();
+}

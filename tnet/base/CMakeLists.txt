@@ -6,8 +6,9 @@ set(base_SRCS
   LogStream.cc
   Thread.cc
   ThreadPool.cc
+  TimerFd.cc
   Timestamp.cc
 )
 
 add_library(tnet_base SHARED ${base_SRCS})
-set_target_properties(tnet_base PROPERTIES COMPILE_FLAGS "-std=c++11")
+set_target_properties(tnet_base PROPERTIES COMPILE_FLAGS "-std=c++0x")

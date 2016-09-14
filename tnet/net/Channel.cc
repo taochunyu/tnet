@@ -16,6 +16,7 @@ const int Channel::kWriteEvent = POLLOUT;
 
 Channel::Channel(EventLoop* loop, int fd)
   : _loop(loop), _fd(fd), _events(0), _revents(0), _index(-1) {}
+
 void Channel::handleEvent() {
   if (_revents & POLLNVAL) {
     LOG_WARN << "Channel::handle_event() POLLNVAL";
