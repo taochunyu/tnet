@@ -14,7 +14,9 @@ const int kPollTimeMs = 10000;
 
 }  // namespace
 
-EventLoop::EventLoop() : _looping(false), _threadId(tnet::CurrentThread::tid()) {
+EventLoop::EventLoop() : _looping(false),
+                         _threadId(tnet::CurrentThread::tid()),
+                         _poller(Poller::newDefaultPoller(this)) {
   LOG_TRACE << "EventLoop created " << this << "in thread" << _threadId;
   if (t_loopInThisThread) {
     LOG_FATAL
@@ -51,9 +53,9 @@ void EventLoop::quit() {
 }
 
 void EventLoop::updateChannel(Channel* channel) {
-  assert(channel -> ownerLoop() == this);
+  assert(channel->ownerLoop() == this);
   assertInLoopThread();
-  _poller -> updateChannel(channel);
+  _poller->updateChannel(channel);
 }
 
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {

@@ -6,16 +6,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-set(CXX_FLAGS
- -g
- -Wall
- -std=c++11
- )
-
-string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
-
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -finline-limit=1000 -DNDEBUG")
 set(PROJECT_SOURCE_DIR /Users/taochunyu/worktable/tnet)
 

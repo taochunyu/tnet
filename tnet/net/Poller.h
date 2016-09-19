@@ -33,7 +33,6 @@ class Poller : tnet::nocopyable {
   void assertInLoopThread() const {
     _ownerloop -> assertInLoopThread();
   }
-
   static Poller* newDefaultPoller(EventLoop* loop);
  protected:
   using ChannelMap = std::map<int, Channel*>;

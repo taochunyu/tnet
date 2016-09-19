@@ -2,6 +2,7 @@
 #include <tnet/net/Channel.h>
 #include <tnet/base/TimerFd.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <chrono>
 
 tnet::net::EventLoop* g_loop;
@@ -21,6 +22,8 @@ int main() {
 
   channel.setReadCallback(timeout);
   channel.enableReading();
+
+  loop.loop();
 
   return 0;
 }

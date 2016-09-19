@@ -1,6 +1,7 @@
 #ifndef TNET_NET_CHANNEL_H
 #define TNET_NET_CHANNEL_H
 #include <tnet/base/nocopyable.h>
+#include <stdio.h>
 #include <functional>
 namespace tnet {
 namespace net {
@@ -15,7 +16,8 @@ class Channel : tnet::nocopyable {
   using EventCallback = std::function<void()>;
 
   Channel(EventLoop *loop, int fd);
-  ~Channel() {}
+  ~Channel() {
+  }
 
   void handleEvent();
   void setReadCallback(const EventCallback &cb) {

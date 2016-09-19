@@ -33,5 +33,7 @@ void Channel::handleEvent() {
 }
 
 void Channel::update() {
-  _loop -> updateChannel(this);
+  int a = this->fd();
+  _loop->updateChannel(this);
+  (void)a;
 }
