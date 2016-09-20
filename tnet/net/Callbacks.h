@@ -7,6 +7,7 @@ using std::function;
 #include <memory>
 using std::shared_ptr;
 
+namespace tnet {
 namespace net {
 
 class Buffer;
@@ -26,5 +27,6 @@ void defaultMessageCallback(const TcpConnectionPtr &conn,
                             tnet::Timestamp receiveTime);
 
 }  // namespace net
+}  // namespace tnet
 
 #endif  // TNET_NET_CALLBACKS_H
