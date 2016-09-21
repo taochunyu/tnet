@@ -1,11 +1,11 @@
 #include <tnet/net/EventLoop.h>
 #include <tnet/net/Channel.h>
-#include <tnet/base/TimerFd.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <chrono>
+#include <tnet/base/TimerFd.cc>
+#include <tnet/base/Timestamp.h>
 
-tnet::net::EventLoop* g_loop;
+using namespace tnet;
+using namespace net;
+
 
 void timeout() {
   printf("Timeout!\n");
@@ -13,13 +13,14 @@ void timeout() {
 
 int main() {
   tnet::net::EventLoop loop;
-  g_loop = &loop;
 
-  tnet::TimerFd timerfd;
+  Timestamp now = Timestamp::now();
+  int64_t absMs = now.microSecondsSinceEpoch() + 5000;
 
-  timerfd.setTime(std::chrono::milliseconds(5000));
-  tnet::net::Channel channel(&loop, timerfd.getFd());
+  int fd = timerfd::timerfd.create();
+  timerfd::timerfd.setTime(fd, absMs);
 
+  tnet::net::Channel channel(&loop, fd);
   channel.setReadCallback(timeout);
   channel.enableReading();
 

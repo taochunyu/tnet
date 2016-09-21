@@ -4,7 +4,7 @@
 #include <tnet/base/LogStream.h>
 #include <tnet/base/TimeStamp.h>
 #include <functional>
-#include <cstdio>
+#include <stdio.h>
 
 namespace tnet {
 

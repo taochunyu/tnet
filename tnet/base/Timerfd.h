@@ -1,24 +1,18 @@
 #ifndef TNET_BASE_TIMERFD_H
 #define TNET_BASE_TIMERFD_H
 
-#include <tnet/base/nocopyable.h>
-#include <chrono>
-#include <atomic>
+#include <tnet/base/Timestamp.h>
+#include <time.h>
 
 namespace tnet {
+namespace timerfd {
 
-class TimerFd : tnet::nocopyable {
- public:
-  TimerFd();
-  ~TimerFd();
+int createTimerfd();
+struct timespec howMuchTimeFromNow(Timestamp when);
+void readTimerFd(int fd, Timestamp now);
+void resetTimerFd(int timerfd, Timestamp expiration);
 
-  int getFd() const;
-  void setTime(const std::chrono::milliseconds& timeout);
- private:
-  int _pipeFd[2];
-  std::atomic<bool> _isTiming;
-};
-
+}  // namespace timerfd
 }  // namespace tnet
 
 #endif  // TNET_BASE_TIMERFD_H
