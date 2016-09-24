@@ -15,10 +15,10 @@ int main() {
   tnet::net::EventLoop loop;
 
   Timestamp now = Timestamp::now();
-  int64_t absMs = now.microSecondsSinceEpoch() + 5000;
+  int64_t absMs = now.microSecondsSinceEpoch() + 2000;
 
-  int fd = timerfd::timerfd.create();
-  timerfd::timerfd.setTime(fd, absMs);
+  int fd = timerfd::timerfd.fd();
+  timerfd::timerfd.setTime(absMs);
 
   tnet::net::Channel channel(&loop, fd);
   channel.setReadCallback(timeout);

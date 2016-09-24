@@ -44,8 +44,7 @@ std::string Timestamp::toFormattedString(bool showMicroSeconds) const {
 Timestamp Timestamp::now() {
   struct timeval tv;
   gettimeofday(&tv, nullptr);
-  int64_t seconds = tv.tv_sec;
-  return Timestamp(seconds * kMicroSecondsPerSecond + tv.tv_usec);
+  return Timestamp(tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
 }

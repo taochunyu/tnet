@@ -16,8 +16,7 @@ class Channel : tnet::nocopyable {
   using EventCallback = std::function<void()>;
 
   Channel(EventLoop *loop, int fd);
-  ~Channel() {
-  }
+  ~Channel() {}
 
   void handleEvent();
   void setReadCallback(const EventCallback &cb) {
