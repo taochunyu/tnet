@@ -37,3 +37,9 @@ void Channel::update() {
   _loop->updateChannel(this);
   (void)a;
 }
+
+void Channel::remove() {
+  assert(isNoneEvent());
+  _addedToLoop = false;
+  _loop->removeChannel(this);
+}

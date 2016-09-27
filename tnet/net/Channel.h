@@ -55,6 +55,7 @@ class Channel : tnet::nocopyable {
   void set_index(int idx) { _index = idx; }
 
   EventLoop* ownerLoop() const { return _loop; }
+  void remove();
  private:
   static const int kNoneEvent;
   static const int kReadEvent;
@@ -67,6 +68,8 @@ class Channel : tnet::nocopyable {
   int _events;
   int _revents;  // current event
   int _index;
+
+  bool _addedToLoop;
 
   EventCallback _readCallback;
   EventCallback _writeCallback;

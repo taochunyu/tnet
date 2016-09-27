@@ -5,6 +5,7 @@
 #include <tnet/base/CurrentThread.h>
 #include <tnet/base/Timestamp.h>
 #include <tnet/base/nocopyable.h>
+#include <tnet/base/Mutex.h>
 #include <tnet/net/Callbacks.h>
 #include <functional>
 #include <vector>
@@ -34,6 +35,12 @@ class EventLoop : tnet::nocopyable {
   // This is not 100% thread safe, if you call through a raw pointer,
   // better to call through shared_ptr<EventLoop> for 100% safety.
   void quit();
+
+  void runInLoop(const Functor& cb);
+  void runInLoop(Functor&& cb);
+  void queueInLoop(const Functor& cb);
+  void queueInLoop(Functor&& cb);
+
   void assertInLoopThread() {
     if (!isInLoopThread()) {
       abortNotInLoopThread();
@@ -41,7 +48,9 @@ class EventLoop : tnet::nocopyable {
   }
 
   // internal usage
+  void wakeup();
   void updateChannel(Channel* channel);
+  void removeChannel(Channel* channel);
 
   bool isInLoopThread() const {
     return _threadId == CurrentThread::tid();
@@ -54,9 +63,17 @@ class EventLoop : tnet::nocopyable {
 
   bool _looping;
   bool _quit;
+  bool _eventHandling;
+  bool _callingPengingFunctors;
+
   const pid_t _threadId;
   std::unique_ptr<Poller> _poller;
   ChannelList _activeChannels;
+
+  Channel* _currentActiveChannel;
+
+  MutexLock _mtx;
+  std::vector<Functor> _pendingFunctors;
 };
 
 }  // namespace net

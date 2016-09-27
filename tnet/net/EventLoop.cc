@@ -1,5 +1,6 @@
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/Logging.h>
+#include <tnet/base/Mutex.h>
 #include <tnet/net/Channel.h>
 #include <tnet/net/Poller.h>
 #include <assert.h>
@@ -52,10 +53,59 @@ void EventLoop::quit() {
   _quit = true;
 }
 
+void EventLoop::runInLoop(const Functor& cb) {
+  if (isInLoopThread()) {
+    cb();
+  } else {
+    queueInLoop(cb);
+  }
+}
+
+void EventLoop::queueInLoop(const Functor& cb) {
+  {
+    MutexLockGuard lck(_mtx);
+    _pendingFunctors.push_back(cb);
+  }
+  if (!isInLoopThread() || _callingPengingFunctors) {
+    wakeup()
+  }
+}
+
+void EventLoop::runInLoop(Functor&& cb) {
+  if (isInLoopThread()) {
+    cb();
+  } else {
+    queueInLoop(cb);
+  }
+}
+
+void EventLoop::queueInLoop(Functor&& cb) {
+  {
+    MutexLockGuard lck(_mtx);
+    _pendingFunctors.push_back(cb);
+  }
+  if (!isInLoopThread() || _callingPengingFunctors) {
+    wakeup()
+  }
+}
+
 void EventLoop::updateChannel(Channel* channel) {
   assert(channel->ownerLoop() == this);
   assertInLoopThread();
   _poller->updateChannel(channel);
+}
+
+void EventLoop::removeChannel(Channel* channel) {
+  assert(channel->ownerLoop() == this);
+  assertInLoopThread();
+  if (_eventHandling) {
+    assert(
+      _currentActiveChannel == channel ||
+      std::find(_activeChannels.begin(), _activeChannels.end(), channel)
+        == _activeChannels.end()
+    );
+    _poller->removeChannel(channel);
+  }
 }
 
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {

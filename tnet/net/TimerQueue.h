@@ -7,8 +7,8 @@
 #include <tnet/base/Timestamp.h>
 #include <memory>
 #include <vector>
-#include <utility>
 #include <set>
+#include <utility>
 
 namespace tnet {
 namespace net {
@@ -32,28 +32,26 @@ class TimerQueue : tnet::nocopyable {
 
   void cancel(TimerId timerId);
  private:
-  using Entry = std::pair<Timestamp, std::unique_ptr<Timer>>;
-  using TimerList = std::set<Entry>;
-  using ActiveTimer = std::pair<std::unique_ptr<Timer>, int64_t>;
-  using ActiveTimerSet = std::set<ActiveTimer>;
+  using TimerPair = std::pair<Timestamp, std::shared_ptr<Timer>>;
+  using TimerPairSet = std::set<TimerPair>;
+  using TimerSet = std::set<std::shared_ptr<Timer>>;
 
-  void addTimerInLoop(std::unique_ptr<Timer> timer);
+  void addTimerInLoop(std::shared_ptr<Timer> timer);
   void cannelInLoop(TimerId timerId);
   void handleRead();
 
-  std::vector<Entry> getExpired(Timestamp now);
-  void reset(const std::vector<Entry>& expired, Timestamp now);
+  TimerPairSet getExpired(Timestamp now);
+  void reset(const TimerPairSet& expired, Timestamp now);
 
-  bool insert(std::unique_ptr<Timer> timer);
+  bool insert(Timer timer);
 
   Eventloop* _loop;
   const int _timerfd;
   Channel _timerfdChannel;
-  TimerList _timers;
+  TimerPairSet _timers;
 
-  ActiveTimerSet _activeTimers;
   bool _callingExpiredTimers;
-  ActiveTimerSet _cannelingTimers;
+  TimerSet _cannelingTimers;
 
 };
 
