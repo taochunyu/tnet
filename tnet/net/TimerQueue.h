@@ -4,22 +4,25 @@
 #include <tnet/base/nocopyable.h>
 #include <tnet/net/Callbacks.h>
 #include <tnet/net/Channel.h>
+#include <tnet/net/EventLoop.h>
 #include <tnet/base/Timestamp.h>
 #include <memory>
 #include <vector>
 #include <set>
 #include <utility>
 
+using namespace tnet::net;
+
 namespace tnet {
 namespace net {
 
-class Eventloop;
+class EventLoop;
 class Timer;
 class TimerId;
 
 class TimerQueue : tnet::nocopyable {
  public:
-  TimerQueue(Eventloop* loop);
+  TimerQueue(EventLoop* loop);
   ~TimerQueue();
 
   TimerId addTimer(const TimerCallback& cb,
@@ -36,22 +39,22 @@ class TimerQueue : tnet::nocopyable {
   using TimerPairSet = std::set<TimerPair>;
   using TimerSet = std::set<std::shared_ptr<Timer>>;
 
-  void addTimerInLoop(std::shared_ptr<Timer> timer);
-  void cannelInLoop(TimerId timerId);
+  void addTimerInLoop(const std::shared_ptr<Timer>& timer);
+  void cancelInLoop(const std::shared_ptr<Timer>& timer);
   void handleRead();
 
-  TimerPairSet getExpired(Timestamp now);
-  void reset(const TimerPairSet& expired, Timestamp now);
+  std::vector<TimerPair> getExpired(const Timestamp now);
+  void reset(const std::vector<TimerPair>& expired, Timestamp now);
 
-  bool insert(Timer timer);
+  bool insert(const std::shared_ptr<Timer>& timer);
 
-  Eventloop* _loop;
+  EventLoop* _loop;
   const int _timerfd;
   Channel _timerfdChannel;
   TimerPairSet _timers;
 
   bool _callingExpiredTimers;
-  TimerSet _cannelingTimers;
+  TimerSet _cancelingTimers;
 
 };
 

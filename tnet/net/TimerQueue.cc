@@ -4,6 +4,7 @@
 #include <tnet/net/Callbacks.h>
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/TimerFd.h>
+#include <tnet/base/Logging.h>
 #include <unistd.h>
 #include <assert.h>
 #include <memory>
@@ -13,7 +14,7 @@ using namespace tnet;
 using namespace tnet::net;
 using namespace tnet::timerfd;
 
-TimerQueue::TimerQueue(Eventloop* loop)
+TimerQueue::TimerQueue(EventLoop* loop)
     : _loop(loop),
       _timerfd(createTimerfd()),
       _timerfdChannel(loop, _timerfd),
@@ -40,23 +41,23 @@ TimerId TimerQueue::addTimer(const TimerCallback& cb,
 }
 
 TimerId TimerQueue::addTimer(const TimerCallback&& cb,
-                             Timerstamp when,
+                             Timestamp when,
                              double interval) {
   auto timer = std::make_shared<Timer>(cb, when, interval);
   _loop->runInLoop([this, timer]{ addTimerInLoop(timer); });
   return TimerId(std::weak_ptr<Timer>(timer), timer->sequence());
 }
 
-void TimerQueue::cancel(Timer timerId) {
-  auto sp = timerId._timer.lock()
+void TimerQueue::cancel(TimerId timerId) {
+  auto sp = timerId._timer.lock();
   if (sp) {
-    _loop->runInLoop([this]{ cancelInLoop(sp); });
+    _loop->runInLoop([this, &sp]{ cancelInLoop(sp); });
   } else {
-    LOG_SYSERR << "Timer " << timerId.sequence << " has been deleted";
+    LOG_SYSERR << "Timer " << timerId._sequence << " has been deleted";
   }
 }
 
-void TimerQueue::addTimerInLoop(std::shared_ptr<Timer>& timer) {
+void TimerQueue::addTimerInLoop(const std::shared_ptr<Timer>& timer) {
   _loop->assertInLoopThread();
   bool earlistChanged = insert(timer);
   if (earlistChanged) {
@@ -64,22 +65,22 @@ void TimerQueue::addTimerInLoop(std::shared_ptr<Timer>& timer) {
   }
 }
 
-void TimerQueue::cannelInLoop(std::shared_ptr<Timer>& timer) {
+void TimerQueue::cancelInLoop(const std::shared_ptr<Timer>& timer) {
   _loop->assertInLoopThread();
-  auto n = _timers.erase(std::make_pair(timer->_sequence, timer));
+  auto n = _timers.erase(std::make_pair(timer->expiration(), timer));
   if (n == 0 && _callingExpiredTimers) {
-    _cannelingTimers.insert(timer);
+    _cancelingTimers.insert(timer);
   }
   assert(n == 1);
 }
 
 void TimerQueue::handleRead() {
-  _loop.assertInLoopThread();
+  _loop->assertInLoopThread();
   Timestamp now(Timestamp::now());
   readTimerFd(_timerfd, now);
   auto expired = getExpired(now);
   _callingExpiredTimers = true;
-  _cancelingTimes.clear();
+  _cancelingTimers.clear();
   for (auto it = expired.begin(); it != expired.end(); it++) {
     it->second->run();
   }
@@ -87,7 +88,7 @@ void TimerQueue::handleRead() {
   reset(expired, now);
 }
 
-std::vector<TimerPair> TimerQueue::getExpired(Timestamp now) {
+std::vector<TimerQueue::TimerPair> TimerQueue::getExpired(const Timestamp now) {
   std::vector<TimerPair> expired;
   auto end = _timers.lower_bound(make_pair(now, std::shared_ptr<Timer>()));
   assert(end == _timers.end() || now < end->first);
@@ -99,7 +100,7 @@ void TimerQueue::reset(const std::vector<TimerPair>& expired, Timestamp now) {
   Timestamp nextExpire;
   for (auto it = expired.begin(); it != expired.end(); ++it) {
     bool notCannelingTimer =
-      _cannelingTimers.find(it->second) == _cannelingTimers.end();
+      _cancelingTimers.find(it->second) == _cancelingTimers.end();
     if (it->second->repeat() && notCannelingTimer) {
       it->second->restart(now);
       insert(it->second);
@@ -115,7 +116,7 @@ void TimerQueue::reset(const std::vector<TimerPair>& expired, Timestamp now) {
   }
 }
 
-bool TimerQueue::insert(std::shared_ptr<Timer>& timer) {
+bool TimerQueue::insert(const std::shared_ptr<Timer>& timer) {
   _loop->assertInLoopThread();
   bool earlistChanged = false;
   Timestamp when = timer->expiration();

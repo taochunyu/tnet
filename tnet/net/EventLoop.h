@@ -37,8 +37,8 @@ class EventLoop : tnet::nocopyable {
   void quit();
 
   void runInLoop(const Functor& cb);
-  void runInLoop(Functor&& cb);
   void queueInLoop(const Functor& cb);
+  void runInLoop(Functor&& cb);
   void queueInLoop(Functor&& cb);
 
   void assertInLoopThread() {
@@ -65,6 +65,8 @@ class EventLoop : tnet::nocopyable {
   bool _quit;
   bool _eventHandling;
   bool _callingPengingFunctors;
+
+  int _wakeupFd[2];
 
   const pid_t _threadId;
   std::unique_ptr<Poller> _poller;

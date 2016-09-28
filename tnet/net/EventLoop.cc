@@ -4,6 +4,7 @@
 #include <tnet/net/Channel.h>
 #include <tnet/net/Poller.h>
 #include <assert.h>
+#include <unistd.h>
 
 using namespace tnet;
 using namespace tnet::net;
@@ -18,6 +19,9 @@ const int kPollTimeMs = 10000;
 EventLoop::EventLoop() : _looping(false),
                          _threadId(tnet::CurrentThread::tid()),
                          _poller(Poller::newDefaultPoller(this)) {
+  if (::pipe(_wakeupFd) == -1) {
+    LOG_FATAL << "create wakeupFd mocker failed because of pipe error";
+  }
   LOG_TRACE << "EventLoop created " << this << "in thread" << _threadId;
   if (t_loopInThisThread) {
     LOG_FATAL
@@ -67,7 +71,7 @@ void EventLoop::queueInLoop(const Functor& cb) {
     _pendingFunctors.push_back(cb);
   }
   if (!isInLoopThread() || _callingPengingFunctors) {
-    wakeup()
+    wakeup();
   }
 }
 
@@ -85,7 +89,15 @@ void EventLoop::queueInLoop(Functor&& cb) {
     _pendingFunctors.push_back(cb);
   }
   if (!isInLoopThread() || _callingPengingFunctors) {
-    wakeup()
+    wakeup();
+  }
+}
+
+void EventLoop::wakeup() {
+  uint64_t one = 1;
+  ssize_t n = ::write(_wakeupFd[1], &one, sizeof(one));
+  if (n != sizeof(one)) {
+    LOG_SYSERR << "EventLoop::wakeup writes " << n << " bytes instead of 8";
   }
 }
 
