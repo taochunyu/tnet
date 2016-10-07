@@ -45,7 +45,7 @@ class Socket : tnet::nocopyable {
   const int _sockfd;
 };
 
-}
+}  // namespace net
 }  // namespace tnet
 
 #endif  // TNET_NET_SOCKET_H
