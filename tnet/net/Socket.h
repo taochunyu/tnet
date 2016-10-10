@@ -8,7 +8,7 @@ struct tcp_info;
 namespace tnet {
 namespace net {
 
-class InetAdress;
+class InetAddress;
 
 class Socket : tnet::nocopyable {
  public:
@@ -21,7 +21,7 @@ class Socket : tnet::nocopyable {
   bool getTcpInfoString(char* buf, int len) const;
 
   // abort if adress in use
-  void bindAdress(const InetAdress&);
+  void bindAddress(const InetAddress&);
   // abort if adress in use
   void listen();
 
@@ -29,9 +29,9 @@ class Socket : tnet::nocopyable {
   // accept socket, which has been set to non-blocking and close-on-exec.
   // *peeraddr is assigned;
   // On error, -1 is returned, and *peeraddr is untouched.
-  int accept(InetAdress* peeraddr);
+  int accept(InetAddress* peeraddr);
 
-  void shutDownWrite();
+  void shutdownWrite();
 
   // Enable/Disable TCP_NODELY (Disable/Enable Nagle's algorithm)
   void setTcpNoDely(bool on);

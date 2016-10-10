@@ -11,7 +11,7 @@ namespace sockets {
 // abort if any error
 int createNonblockingOrDie(sa_family_t family);
 int connect(int sockfd, const struct sockaddr* addr);
-void bindOrDie(int sockfd, struct sockaddr* addr);
+void bindOrDie(int sockfd, const struct sockaddr* addr);
 void listenOrDie(int sockfd);
 int accept(int sockfd, struct sockaddr_in6* addr);
 ssize_t read(int sockfd, void* buf, size_t count);
