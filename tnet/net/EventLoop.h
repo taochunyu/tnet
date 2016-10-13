@@ -16,6 +16,7 @@ namespace net {
 
 class Channel;
 class Poller;
+class TimerId;
 // Reactor, at most one per thread.
 //
 // This is an interface class, so don't expose too much details.
@@ -46,6 +47,15 @@ class EventLoop : tnet::nocopyable {
       abortNotInLoopThread();
     }
   }
+
+  TimerId runAt(const Timestamp& time, const TimerCallback& cb);
+  TimerId runAfter(const double delay, const TimerCallback& cb);
+  TimerId runEvery(const double interval, const TimerCallback& cb);
+  void cancel(TimerId timerId);
+
+  TimerId runAt(const Timestamp& time, const TimerCallback&& cb);
+  TimerId runAfter(const double delay, const TimerCallback&& cb);
+  TimerId runEvery(const double interval, const TimerCallback&& cb);
 
   // internal usage
   void wakeup();
