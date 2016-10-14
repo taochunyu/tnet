@@ -1,9 +1,15 @@
 set(net_SRCS
   Channel.cc
   EventLoop.cc
+  EventLoopThread.cc
+  InetAdress.cc
   Poller.cc
   poller/DefaultPoller.cc
   poller/PollPoller.cc
+  Socket.cc
+  SocketOps.cc
+  Timer.cc
+  TimerQueue.cc
 )
 
 add_library(tnet_net ${net_SRCS})

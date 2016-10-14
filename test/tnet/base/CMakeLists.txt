@@ -1,1 +1,1 @@
-add_executable(nocopyable_test nocopyable_test.cc)
+

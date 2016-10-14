@@ -3,6 +3,9 @@
 #include <tnet/base/Mutex.h>
 #include <tnet/net/Channel.h>
 #include <tnet/net/Poller.h>
+#include <tnet/net/TimerId.h>
+#include <tnet/net/TimerQueue.h>
+
 #include <assert.h>
 #include <unistd.h>
 
@@ -91,6 +94,34 @@ void EventLoop::queueInLoop(Functor&& cb) {
   if (!isInLoopThread() || _callingPengingFunctors) {
     wakeup();
   }
+}
+
+TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback& cb) {
+  return _timerQueue->addTimer(cb, time, 0.0);
+}
+
+TimerId EventLoop::runAfter(const double delay, const TimerCallback& cb) {
+  Timestamp time(addTime(Timestamp::now(), delay));
+  return runAt(time, cb);
+}
+
+TimerId EventLoop::runEvery(const double interval, const TimerCallback& cb) {
+  Timestamp time(addTime(Timestamp::now(), interval));
+  return _timerQueue->addTimer(cb, time, interval);
+}
+
+TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback&& cb) {
+  return _timerQueue->addTimer(cb, time, 0.0);
+}
+
+TimerId EventLoop::runAfter(const double delay, const TimerCallback&& cb) {
+  Timestamp time(addTime(Timestamp::now(), delay));
+  return runAt(time, cb);
+}
+
+TimerId EventLoop::runEvery(const double interval, const TimerCallback&& cb) {
+  Timestamp time(addTime(Timestamp::now(), interval));
+  return _timerQueue->addTimer(cb, time, interval);
 }
 
 void EventLoop::wakeup() {

@@ -15,4 +15,5 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(tnet)
 add_subdirectory(whenDeveloping)
+add_subdirectory(test)
 # add_subdirectory(example example)

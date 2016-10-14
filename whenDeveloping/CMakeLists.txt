@@ -1,1 +1,1 @@
-add_subdirectory(Poller Poller)
+add_subdirectory(Poller)

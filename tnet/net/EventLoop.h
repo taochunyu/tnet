@@ -17,6 +17,7 @@ namespace net {
 class Channel;
 class Poller;
 class TimerId;
+class TimerQueue;
 // Reactor, at most one per thread.
 //
 // This is an interface class, so don't expose too much details.
@@ -76,6 +77,8 @@ class EventLoop : tnet::nocopyable {
   bool _eventHandling;
   bool _callingPengingFunctors;
 
+  Timestamp _pollReturnTime;
+  std::unique_ptr<TimerQueue> _timerQueue;
   int _wakeupFd[2];
 
   const pid_t _threadId;
