@@ -2,12 +2,12 @@ set(net_SRCS
   Channel.cc
   EventLoop.cc
   EventLoopThread.cc
-  InetAdress.cc
+  InetAddress.cc
   Poller.cc
   poller/DefaultPoller.cc
   poller/PollPoller.cc
   Socket.cc
-  SocketOps.cc
+  SocketsOps.cc
   Timer.cc
   TimerQueue.cc
 )
