@@ -26,12 +26,3 @@ TEST_F(ExceptionTest, tryCatchTest) {
     printf("stack trace: %s\n", ex.stackTrace());
   }
 }
-
-#ifndef GTEST_ALL
-
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
-
-#endif  // GTEST_ALL

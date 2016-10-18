@@ -6,7 +6,7 @@ set(base_SRCS
   LogStream.cc
   Thread.cc
   ThreadPool.cc
-  TimerFd.cc
+  # TimerFd.cc
   Timestamp.cc
 )
 
