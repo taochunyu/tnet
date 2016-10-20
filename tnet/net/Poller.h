@@ -3,7 +3,6 @@
 
 #include <tnet/base/nocopyable.h>
 #include <tnet/base/Timestamp.h>
-#include <tnet/net/EventLoop.h>
 #include <map>
 #include <vector>
 
@@ -11,6 +10,7 @@ namespace tnet {
 namespace net {
 
 class Channel;
+class EventLoop;
 // base class for I/O Multiplexing
 // this class doesn't own the Channel Objects
 class Poller : tnet::nocopyable {

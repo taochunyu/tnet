@@ -1,6 +1,7 @@
 #ifndef TNET_NET_CHANNEL_H
 #define TNET_NET_CHANNEL_H
 #include <tnet/base/nocopyable.h>
+#include <tnet/net/EventLoop.h>
 #include <stdio.h>
 #include <functional>
 namespace tnet {

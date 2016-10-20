@@ -48,7 +48,7 @@ TimerFd::TimerFd() {
 }
 
 TimerFd::~TimerFd() {
-  LOG_FATAL << "timerfd mocker should not be destoried";
+  // LOG_FATAL << "timerfd mocker should not be destoried";
 }
 
 inline int TimerFd::fd() const {

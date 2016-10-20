@@ -15,11 +15,11 @@ class MutexLock : tnet::nocopyable {
   friend class Condition;
  public:
   MutexLock() : _holder(0) {
-    returnCheck(pthread_mutex_init(&_mutex, nullptr), "init");
+    returnCheck(::pthread_mutex_init(&_mutex, nullptr), "init");
   }
   ~MutexLock() {
     assert(_holder == 0);
-    returnCheck(pthread_mutex_destroy(&_mutex), "destory");
+    returnCheck(::pthread_mutex_destroy(&_mutex), "destory");
   }
   bool isLockedByThisThread() const {
     return _holder == CurrentThread::tid();
@@ -28,12 +28,12 @@ class MutexLock : tnet::nocopyable {
     assert(isLockedByThisThread());
   }
   void lock() {
-    returnCheck(pthread_mutex_lock(&_mutex), "lock");
+    returnCheck(::pthread_mutex_lock(&_mutex), "lock");
     assignHolder();
   }
   void unlock() {
     unassignHolder();
-    returnCheck(pthread_mutex_unlock(&_mutex), "unlock");
+    returnCheck(::pthread_mutex_unlock(&_mutex), "unlock");
   }
   pthread_mutex_t* getPthreadMutex() /*no-const*/{
     return &_mutex;

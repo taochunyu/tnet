@@ -2,6 +2,7 @@
 #define TNET_TBASE_CURRENT_THREAD_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 namespace tnet {
 namespace CurrentThread {
@@ -17,6 +18,7 @@ inline int tid() {
   if (__builtin_expect(t_cacheTid == 0, 0)) {
     cacheTid();
   }
+  printf("***Tid: %d\n", t_cacheTid);
   return t_cacheTid;
 }
 
