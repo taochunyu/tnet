@@ -6,7 +6,6 @@
 #include <tnet/base/Timestamp.h>
 #include <tnet/base/nocopyable.h>
 #include <tnet/base/Mutex.h>
-#include <tnet/net/Poller.h>
 #include <tnet/net/Callbacks.h>
 #include <functional>
 #include <vector>
@@ -16,6 +15,7 @@ namespace tnet {
 namespace net {
 
 class Channel;
+class Poller;
 class TimerId;
 class TimerQueue;
 // Reactor, at most one per thread.
@@ -76,14 +76,13 @@ class EventLoop : tnet::nocopyable {
   bool _quit;
   bool _eventHandling;
   bool _callingPengingFunctors;
-  const pid_t _threadId;
-  int _wakeupFd[2];
-
 
   Timestamp _pollReturnTime;
-  std::unique_ptr<Poller> _poller;
   std::unique_ptr<TimerQueue> _timerQueue;
+  int _wakeupFd[2];
 
+  const pid_t _threadId;
+  std::unique_ptr<Poller> _poller;
   ChannelList _activeChannels;
 
   Channel* _currentActiveChannel;

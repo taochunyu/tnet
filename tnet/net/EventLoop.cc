@@ -21,10 +21,7 @@ const int kPollTimeMs = 10000;
 
 EventLoop::EventLoop() : _looping(false),
                          _threadId(tnet::CurrentThread::tid()),
-                         _timerQueue(this),
                          _poller(Poller::newDefaultPoller(this)) {
-  printf("!!!%d\n", _threadId);
-
   if (::pipe(_wakeupFd) == -1) {
     LOG_FATAL << "create wakeupFd mocker failed because of pipe error";
   }
@@ -100,7 +97,7 @@ void EventLoop::queueInLoop(Functor&& cb) {
 }
 
 TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback& cb) {
-  return _timerQueue.addTimer(cb, time, 0.0);
+  return _timerQueue->addTimer(cb, time, 0.0);
 }
 
 TimerId EventLoop::runAfter(const double delay, const TimerCallback& cb) {
@@ -110,11 +107,11 @@ TimerId EventLoop::runAfter(const double delay, const TimerCallback& cb) {
 
 TimerId EventLoop::runEvery(const double interval, const TimerCallback& cb) {
   Timestamp time(addTime(Timestamp::now(), interval));
-  return _timerQueue.addTimer(cb, time, interval);
+  return _timerQueue->addTimer(cb, time, interval);
 }
 
 TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback&& cb) {
-  return _timerQueue.addTimer(cb, time, 0.0);
+  return _timerQueue->addTimer(cb, time, 0.0);
 }
 
 TimerId EventLoop::runAfter(const double delay, const TimerCallback&& cb) {
@@ -124,7 +121,7 @@ TimerId EventLoop::runAfter(const double delay, const TimerCallback&& cb) {
 
 TimerId EventLoop::runEvery(const double interval, const TimerCallback&& cb) {
   Timestamp time(addTime(Timestamp::now(), interval));
-  return _timerQueue.addTimer(cb, time, interval);
+  return _timerQueue->addTimer(cb, time, interval);
 }
 
 void EventLoop::wakeup() {
@@ -160,6 +157,6 @@ EventLoop* EventLoop::getEventLoopOfCurrentThread() {
 
 void EventLoop::abortNotInLoopThread() {
   LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
-            << " was created in threadId = " << _threadId
+            << " was created in threadId_ = " << _threadId
             << ", current thread id = " <<  CurrentThread::tid();
 }

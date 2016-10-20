@@ -36,9 +36,7 @@ TimerId TimerQueue::addTimer(const TimerCallback& cb,
                              Timestamp when,
                              double interval) {
   auto timer = std::make_shared<Timer>(cb, when, interval);
-  _loop->runInLoop([/*this, &timer*/]{
-    //addTimerInLoop(timer);
-  });
+  _loop->runInLoop([this, &timer]{ addTimerInLoop(timer); });
   return TimerId(std::weak_ptr<Timer>(timer), timer->sequence());
 }
 
@@ -46,7 +44,7 @@ TimerId TimerQueue::addTimer(const TimerCallback&& cb,
                              Timestamp when,
                              double interval) {
   auto timer = std::make_shared<Timer>(cb, when, interval);
-  _loop->runInLoop([this, &timer]{ addTimerInLoop(timer); });
+  _loop->runInLoop([this, timer]{ addTimerInLoop(timer); });
   return TimerId(std::weak_ptr<Timer>(timer), timer->sequence());
 }
 
