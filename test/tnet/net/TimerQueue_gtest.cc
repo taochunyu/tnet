@@ -15,13 +15,12 @@ class TimerQueueTest : public testing::Test {
   virtual void SetUp() {
     printTid();
     ::sleep(1);
-    EventLoop loop;
-    _loop = &loop;
+    _loop = std::make_shared<EventLoop>();
   }
   virtual void TearDown() {}
   void printTid() {
     printf("pid = %d, tid = %d\n", ::getpid(), CurrentThread::tid());
-    printf("now %s\n", Timestamp::now().toString().c_str());
+    printf("now: %s\n", Timestamp::now().toString().c_str());
   }
   void print(const char* msg) {
     printf("msg: %s %s\n", Timestamp::now().toString().c_str(), msg);
@@ -34,10 +33,11 @@ class TimerQueueTest : public testing::Test {
     printf("cancelled at %s\n", Timestamp::now().toString().c_str());
   }
   int _cnt = 0;
-  EventLoop* _loop;
+  std::shared_ptr<EventLoop> _loop;
 };
 
 TEST_F(TimerQueueTest, EventLoopInterfaceTest) {
   print("main");
   _loop->runAfter(1, [this]{ print("once"); });
+  _loop->loop();
 }

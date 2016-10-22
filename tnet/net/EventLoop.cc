@@ -21,7 +21,8 @@ const int kPollTimeMs = 10000;
 
 EventLoop::EventLoop() : _looping(false),
                          _threadId(tnet::CurrentThread::tid()),
-                         _poller(Poller::newDefaultPoller(this)) {
+                         _poller(Poller::newDefaultPoller(this)),
+                         _timerQueue(new TimerQueue(this)) {
   if (::pipe(_wakeupFd) == -1) {
     LOG_FATAL << "create wakeupFd mocker failed because of pipe error";
   }
@@ -102,6 +103,7 @@ TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback& cb) {
 
 TimerId EventLoop::runAfter(const double delay, const TimerCallback& cb) {
   Timestamp time(addTime(Timestamp::now(), delay));
+  printf("%lld\n", time.microSecondsSinceEpoch());
   return runAt(time, cb);
 }
 
@@ -116,6 +118,7 @@ TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback&& cb) {
 
 TimerId EventLoop::runAfter(const double delay, const TimerCallback&& cb) {
   Timestamp time(addTime(Timestamp::now(), delay));
+  printf("%lld\n", time.microSecondsSinceEpoch());
   return runAt(time, cb);
 }
 
@@ -157,6 +160,6 @@ EventLoop* EventLoop::getEventLoopOfCurrentThread() {
 
 void EventLoop::abortNotInLoopThread() {
   LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
-            << " was created in threadId_ = " << _threadId
+            << " was created in threadId = " << _threadId
             << ", current thread id = " <<  CurrentThread::tid();
 }

@@ -51,7 +51,7 @@ class TimerQueue : tnet::nocopyable {
   EventLoop* _loop;
   const int _timerfd;
   Channel _timerfdChannel;
-  TimerPairSet _timers;
+  TimerSet _timers;
 
   bool _callingExpiredTimers;
   TimerSet _cancelingTimers;

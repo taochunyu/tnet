@@ -88,7 +88,7 @@ inline double timeDifference(const Timestamp &high, const Timestamp &low) {
 }
 
 inline Timestamp addTime(Timestamp timestamp, double seconds) {
-  int64_t delta = static_cast<int64_t>(seconds * Timestamp::kMicroSecondsPerSecond);
+  int64_t delta = static_cast<int64_t>(seconds * 1000);
   return Timestamp(timestamp.microSecondsSinceEpoch() + delta);
 }
 

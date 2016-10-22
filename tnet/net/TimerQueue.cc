@@ -6,6 +6,7 @@
 #include <tnet/base/TimerFd.h>
 #include <tnet/base/Logging.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <assert.h>
 #include <memory>
 #include <utility>
@@ -78,7 +79,9 @@ void TimerQueue::handleRead() {
   _loop->assertInLoopThread();
   Timestamp now(Timestamp::now());
   readTimerFd(_timerfd, now);
+  puts("world\n");
   auto expired = getExpired(now);
+  puts("hello\n");
   _callingExpiredTimers = true;
   _cancelingTimers.clear();
   for (auto it = expired.begin(); it != expired.end(); it++) {
@@ -90,9 +93,11 @@ void TimerQueue::handleRead() {
 
 std::vector<TimerQueue::TimerPair> TimerQueue::getExpired(const Timestamp now) {
   std::vector<TimerPair> expired;
-  auto end = _timers.lower_bound(make_pair(now, std::shared_ptr<Timer>()));
+  auto ptr_max = std::shared_ptr<Timer>(reinterpret_cast<Timer*>(UINTPTR_MAX));
+  auto end = _timers.lower_bound(make_pair(now, ptr_max));
   assert(end == _timers.end() || now < end->first);
   std::copy(_timers.begin(), end, back_inserter(expired));
+  puts("hi\n");
   return expired;
 }
 

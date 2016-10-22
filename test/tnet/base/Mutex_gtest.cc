@@ -27,6 +27,9 @@ class MutexTest : public testing::Test {
 };
 
 TEST_F(MutexTest, ThreadTest) {
+  {
+    MutexLockGuard lck(g_mutex);
+  }
   const int kMaxThreads = 8;
   g_vec.reserve(kMaxThreads * kCount);
 

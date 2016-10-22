@@ -48,7 +48,7 @@ TimerFd::TimerFd() {
 }
 
 TimerFd::~TimerFd() {
-  LOG_FATAL << "timerfd mocker should not be destoried";
+  // LOG_FATAL << "timerfd mocker should not be destoried";
 }
 
 inline int TimerFd::fd() const {
@@ -79,6 +79,7 @@ void TimerFd::push(int64_t msExpirationAbs) {
 
 void TimerFd::pop() {
   std::lock_guard<std::mutex> lck(_mtx);
+  //printf("call %lld %lld\n", _stamp, getMsNowAbs());
   if (_stamp > 0 && _stamp <= getMsNowAbs()) {
     writeToPipe();
     _stamp = 0;

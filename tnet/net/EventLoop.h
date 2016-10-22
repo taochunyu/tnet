@@ -76,13 +76,13 @@ class EventLoop : tnet::nocopyable {
   bool _quit;
   bool _eventHandling;
   bool _callingPengingFunctors;
-
-  Timestamp _pollReturnTime;
-  std::unique_ptr<TimerQueue> _timerQueue;
+  const pid_t _threadId;
   int _wakeupFd[2];
 
-  const pid_t _threadId;
+  Timestamp _pollReturnTime;
   std::unique_ptr<Poller> _poller;
+  std::unique_ptr<TimerQueue> _timerQueue;
+
   ChannelList _activeChannels;
 
   Channel* _currentActiveChannel;
