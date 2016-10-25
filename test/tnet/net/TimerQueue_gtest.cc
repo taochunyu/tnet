@@ -14,7 +14,6 @@ class TimerQueueTest : public testing::Test {
  protected:
   virtual void SetUp() {
     printTid();
-    ::sleep(1);
     _loop = std::make_shared<EventLoop>();
   }
   virtual void TearDown() {}
@@ -38,6 +37,6 @@ class TimerQueueTest : public testing::Test {
 
 TEST_F(TimerQueueTest, EventLoopInterfaceTest) {
   print("main");
-  _loop->runAfter(1, [this]{ print("once"); });
+  _loop->runAfter(1, [this]{ print("once"); _loop->quit(); });
   _loop->loop();
 }

@@ -4,6 +4,7 @@
 #include <tnet/base/nocopyable.h>
 #include <tnet/net/Callbacks.h>
 #include <tnet/net/Channel.h>
+#include <tnet/net/Timer.h>
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/Timestamp.h>
 #include <memory>
@@ -17,7 +18,6 @@ namespace tnet {
 namespace net {
 
 class EventLoop;
-class Timer;
 class TimerId;
 
 class TimerQueue : tnet::nocopyable {
@@ -35,18 +35,21 @@ class TimerQueue : tnet::nocopyable {
 
   void cancel(TimerId timerId);
  private:
-  using TimerPair = std::pair<Timestamp, std::shared_ptr<Timer>>;
-  using TimerPairSet = std::set<TimerPair>;
-  using TimerSet = std::set<std::shared_ptr<Timer>>;
+  static bool cmp(const std::shared_ptr<Timer>& lhs,
+                  const std::shared_ptr<Timer>& rhs) {
+    return lhs->expiration() < rhs->expiration();
+  }
+  using TimerSet = std::multiset<std::shared_ptr<Timer>, decltype(cmp)*>;
+  using TimerVector = std::vector<std::shared_ptr<Timer>>;
 
   void addTimerInLoop(const std::shared_ptr<Timer>& timer);
   void cancelInLoop(const std::shared_ptr<Timer>& timer);
   void handleRead();
 
-  std::vector<TimerPair> getExpired(const Timestamp now);
-  void reset(const std::vector<TimerPair>& expired, Timestamp now);
-
+  TimerVector getExpired(const Timestamp now);
+  void reset(const TimerVector& expired, Timestamp now);
   bool insert(const std::shared_ptr<Timer>& timer);
+
 
   EventLoop* _loop;
   const int _timerfd;
@@ -55,7 +58,6 @@ class TimerQueue : tnet::nocopyable {
 
   bool _callingExpiredTimers;
   TimerSet _cancelingTimers;
-
 };
 
 }  // namespace net

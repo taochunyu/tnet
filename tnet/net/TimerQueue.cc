@@ -19,8 +19,9 @@ TimerQueue::TimerQueue(EventLoop* loop)
     : _loop(loop),
       _timerfd(createTimerfd()),
       _timerfdChannel(loop, _timerfd),
-      _timers(),
-      _callingExpiredTimers(false) {
+      _timers(cmp),
+      _callingExpiredTimers(false),
+      _cancelingTimers(cmp) {
   _timerfdChannel.setReadCallback([this]{
     handleRead();
   });
@@ -68,7 +69,7 @@ void TimerQueue::addTimerInLoop(const std::shared_ptr<Timer>& timer) {
 
 void TimerQueue::cancelInLoop(const std::shared_ptr<Timer>& timer) {
   _loop->assertInLoopThread();
-  auto n = _timers.erase(std::make_pair(timer->expiration(), timer));
+  auto n = _timers.erase(timer);
   if (n == 0 && _callingExpiredTimers) {
     _cancelingTimers.insert(timer);
   }
@@ -76,44 +77,43 @@ void TimerQueue::cancelInLoop(const std::shared_ptr<Timer>& timer) {
 }
 
 void TimerQueue::handleRead() {
+  printf("%lu\n", _timers.size());
   _loop->assertInLoopThread();
   Timestamp now(Timestamp::now());
   readTimerFd(_timerfd, now);
-  puts("world\n");
   auto expired = getExpired(now);
-  puts("hello\n");
   _callingExpiredTimers = true;
   _cancelingTimers.clear();
   for (auto it = expired.begin(); it != expired.end(); it++) {
-    it->second->run();
+    (*it)->run();
   }
   _callingExpiredTimers = false;
   reset(expired, now);
 }
 
-std::vector<TimerQueue::TimerPair> TimerQueue::getExpired(const Timestamp now) {
-  std::vector<TimerPair> expired;
-  auto ptr_max = std::shared_ptr<Timer>(reinterpret_cast<Timer*>(UINTPTR_MAX));
-  auto end = _timers.lower_bound(make_pair(now, ptr_max));
-  assert(end == _timers.end() || now < end->first);
+TimerQueue::TimerVector TimerQueue::getExpired(const Timestamp now) {
+  TimerVector expired;
+  auto ptr_now = std::make_shared<Timer>([]{}, now, 0.0);
+  auto end = _timers.upper_bound(ptr_now);
+  assert(end == _timers.end() || now < (*end)->expiration());
   std::copy(_timers.begin(), end, back_inserter(expired));
-  puts("hi\n");
+  _timers.erase(_timers.begin(), end);
   return expired;
 }
 
-void TimerQueue::reset(const std::vector<TimerPair>& expired, Timestamp now) {
+void TimerQueue::reset(const TimerVector& expired, Timestamp now) {
   Timestamp nextExpire;
   for (auto it = expired.begin(); it != expired.end(); ++it) {
     bool notCannelingTimer =
-      _cancelingTimers.find(it->second) == _cancelingTimers.end();
-    if (it->second->repeat() && notCannelingTimer) {
-      it->second->restart(now);
-      insert(it->second);
+      _cancelingTimers.find(*it) == _cancelingTimers.end();
+    if ((*it)->repeat() && notCannelingTimer) {
+      (*it)->restart(now);
+      insert(*it);
     }
   }
 
   if (!_timers.empty()) {
-    nextExpire = _timers.begin()->second->expiration();
+    nextExpire = (*_timers.begin())->expiration();
   }
 
   if (nextExpire.valid()) {
@@ -126,10 +126,9 @@ bool TimerQueue::insert(const std::shared_ptr<Timer>& timer) {
   bool earlistChanged = false;
   Timestamp when = timer->expiration();
   auto it = _timers.begin();
-  if (it == _timers.end() || when < it->first) {
+  if (it == _timers.end() || when < (*it)->expiration()) {
     earlistChanged = true;
   }
-  auto result = _timers.insert(make_pair(when, timer));
-  assert(result.second);
+  _timers.insert(timer);
   return earlistChanged;
 }

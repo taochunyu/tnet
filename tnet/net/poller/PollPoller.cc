@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
+#include <stdio.h>
 
 using namespace tnet;
 using namespace tnet::net;
