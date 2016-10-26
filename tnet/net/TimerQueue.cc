@@ -77,7 +77,6 @@ void TimerQueue::cancelInLoop(const std::shared_ptr<Timer>& timer) {
 }
 
 void TimerQueue::handleRead() {
-  printf("%lu\n", _timers.size());
   _loop->assertInLoopThread();
   Timestamp now(Timestamp::now());
   readTimerFd(_timerfd, now);

@@ -37,6 +37,16 @@ class TimerQueueTest : public testing::Test {
 
 TEST_F(TimerQueueTest, EventLoopInterfaceTest) {
   print("main");
-  _loop->runAfter(1, [this]{ print("once"); _loop->quit(); });
+  _loop->runAfter(10, [this]{ print("Exit"); _loop->quit(); });
+  _loop->runEvery(1, [this]{ print("CLOCK"); });
+  _loop->runAfter(2, [this]{ print("once2"); });
+  _loop->runAfter(2.5, [this]{ print("once2.5"); });
+  _loop->runAfter(3.0, [this]{ print("once3"); });
+  _loop->runAfter(3.5, [this]{ print("once3.5"); });
+  TimerId t45 = _loop->runAfter(4.5, [this]{ print("once4.5"); });
+  _loop->runAfter(4.2, [this, &t45]{ cancel(t45); });
+  _loop->runAfter(4.8, [this, &t45]{ cancel(t45); });
+  TimerId t3 = _loop->runEvery(3, [this]{ print("CLOCK3"); });
+  _loop->runAfter(8, [this, t3]{ cancel(t3); });
   _loop->loop();
 }
