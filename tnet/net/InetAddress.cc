@@ -69,7 +69,7 @@ std::string InetAddress::toIpPort() const {
 }
 
 uint16_t InetAddress::toPort() const {
-  return sockets::networkTohost16(portNetEndian());
+  return sockets::networkToHost16(portNetEndian());
 }
 
 uint32_t InetAddress::ipNetEndian() const {

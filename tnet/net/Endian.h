@@ -20,15 +20,15 @@ inline uint16_t hostToNetwork16(uint16_t host16) {
   return htons(host16);
 }
 
-inline uint64_t networkTohost64(uint64_t net64) {
+inline uint64_t networkToHost64(uint64_t net64) {
   return ntohll(net64);
 }
 
-inline uint32_t networkTohost32(uint32_t net32) {
+inline uint32_t networkToHost32(uint32_t net32) {
   return ntohl(net32);
 }
 
-inline uint16_t networkTohost16(uint16_t net16) {
+inline uint16_t networkToHost16(uint16_t net16) {
   return ntohs(net16);
 }
 
