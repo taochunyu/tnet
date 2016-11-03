@@ -17,9 +17,9 @@ using TcpConnectionPtr      = shared_ptr<TcpConnection>;
 using TimerCallback         = function<void()>;
 using ConnectionCallback    = function<void(const TcpConnectionPtr&)>;
 using CloseCallback         = function<void(const TcpConnectionPtr&)>;
-using WriteCompleteCallback = function<void(const TcpConnectionPtr&)>;
+using WriteCompletedCallback = function<void(const TcpConnectionPtr&)>;
 using HighWaterMarkCallback = function<void(const TcpConnectionPtr&)>;
-using MessageCallback       = function<void(const TcpConnectionPtr&, Buffer *Timestamp)>;
+using MessageCallback       = function<void(const TcpConnectionPtr&, Buffer*, Timestamp)>;
 
 void defaultConnectionCallback(const TcpConnectionPtr &conn);
 void defaultMessageCallback(const TcpConnectionPtr &conn,

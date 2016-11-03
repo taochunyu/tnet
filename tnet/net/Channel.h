@@ -19,14 +19,29 @@ class Channel : tnet::nocopyable {
   ~Channel() {}
 
   void handleEvent();
-  void setReadCallback(const EventCallback &cb) {
+  void onReadable(const EventCallback& cb) {
     _readCallback = cb;
   }
-  void setWriteCallback(const EventCallback &cb) {
+  void onReadable(EventCallback&& cb) {
+    _readCallback = std::move(cb);
+  }
+  void onWritable(const EventCallback &cb) {
     _writeCallback = cb;
   }
-  void setErrorCallback(const EventCallback &cb) {
+  void onWritable(EventCallback&& cb) {
+    _writeCallback = std::move(cb);
+  }
+  void onClose(const EventCallback& cb) {
+    _writeCallback = cb;
+  }
+  void onClose(EventCallback&& cb) {
+    _writeCallback = std::move(cb);
+  }
+  void onError(const EventCallback &cb) {
     _errorCallback = cb;
+  }
+  void onError(EventCallback&& cb) {
+    _errorCallback = std::move(cb);
   }
 
   int fd() const { return _fd; }

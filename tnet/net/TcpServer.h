@@ -55,18 +55,27 @@ class TcpServer : tnet::nocopyable {
   void start();
 
   /// Not thread safe.
-  void setConnectionCallback(const ConnectionCallback& cb) {
+  void onConnected(const ConnectionCallback& cb) {
     _connectionCallback = cb;
   }
-
-  /// Not thread safe.
-  void setMessageCallback(const MessageCallback& cb) {
-    _messageCallback = cb;
+  void onConnected(ConnectionCallback&& cb) {
+    _connectionCallback = std::move(cb);
   }
 
   /// Not thread safe.
-  void setWriteCompleteCallback(const WriteCompleteCallback& cb) {
-    _writeCompleteCallback = cb;
+  void onMessage(const MessageCallback& cb) {
+    _messageCallback = cb;
+  }
+  void onMessage(MessageCallback&& cb) {
+    _messageCallback = std::move(cb);
+  }
+
+  /// Not thread safe.
+  void onWriteCompleted(const WriteCompletedCallback& cb) {
+    _writeCompletedCallback = cb;
+  }
+  void onWriteCompleted(WriteCompletedCallback&& cb) {
+    _writeCompletedCallback = std::move(cb);
   }
  private:
   using ConnectionMap = std::map<std::string, TcpConnectionPtr>;
@@ -84,7 +93,7 @@ class TcpServer : tnet::nocopyable {
   std::shared_ptr<EventLoopThreadPool> _threadPool;
   ConnectionCallback _connectionCallback;
   MessageCallback _messageCallback;
-  WriteCompleteCallback _writeCompleteCallback;
+  WriteCompletedCallback _writeCompletedCallback;
   ThreadInitCallback _threadInitCallback;
   std::atomic<int> _started;
 

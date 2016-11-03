@@ -1,11 +1,151 @@
 #ifndef TNET_NET_TCPCONNECTION_H
 #define TNET_NET_TCPCONNECTION_H
 
+#include <tnet/base/nocopyable.h>
 #include <tnet/base/StringPiece.h>
-#include <tnet/net/Callbacks.h>
+#include <tnet/base/Timestamp.h>
 #include <tnet/net/Buffer.h>
+#include <tnet/net/Callbacks.h>
 #include <tnet/net/InetAddress.h>
+#include <memory>
+#include <string>
 
+struct tcp_info;
 
+namespace tnet {
+namespace net {
+
+class Channel;
+class EventLoop;
+class Socket;
+
+class TcpConnection : tnet::nocopyable {
+ public:
+  /// Constructs a TcpConnection with a connected sockfd
+  /// User should not create this object.
+  TcpConnection(EventLoop* loop,
+                const std::string& name,
+                int sockfd,
+                const InetAddress& localAddr,
+                const InetAddress& peerAddr);
+  ~TcpConnection();
+
+  EventLoop* getLoop() const { return _loop; }
+  const std::string name() const { return _name; }
+  const InetAddress localAddress() const { return _localAddress; }
+  const InetAddress peerAddress() const { return _peerAddress; }
+  bool connected() const { return _state == kConnected; }
+  bool disconnected() const { return _state == kDisconnected; }
+  bool getTcpInfo(struct tcp_info*) const;
+  std::string getTcpInfoString() const;
+
+  void shutdown();
+  void forceClose();
+  void forceCloseWithDelay();
+  void setTcpNoDelay(bool on);
+
+  void send(const void* message, int len);
+  void send(std::string&& message);
+  void send(const StringPiece& message);
+  void send(Buffer* message);
+  void send(Buffer&& message);
+
+  void startRead();
+  void stopRead();
+  bool isReading() const { return _reading; }
+
+  Buffer* inputBuffer() {
+    return &_inputBuffer;
+  }
+  Buffer* outputBuffer() {
+    return &_outputBuffer;
+  }
+
+  // c++ 17
+  // void setContext(const std::any& context) { _context = context; }
+  // void std::any getContext() const { return _context; }
+  // void std::any* getMutableContext() { return &_context; }
+
+  void onConnection(const ConnectionCallback& cb) {
+    _connectionCallback = cb;
+  }
+  void onConnection(ConnectionCallback&& cb) {
+    _connectionCallback = std::move(cb);
+  }
+  void onMessage(const MessageCallback& cb) {
+    _messageCallback = cb;
+  }
+  void onMessage(MessageCallback&& cb) {
+    _messageCallback = std::move(cb);
+  }
+  void onWriteCompleted(const WriteCompletedCallback& cb) {
+    _writeCompletedCallback = cb;
+  }
+  void onWriteCompleted(WriteCompletedCallback&& cb) {
+    _writeCompletedCallback = std::move(cb);
+  }
+  void onHighWaterMark(const HighWaterMarkCallback& cb,
+                                size_t highWaterMark) {
+    _highWaterMarkCallback = cb;
+    _highWaterMark = highWaterMark;
+  }
+  void onHighWaterMark(HighWaterMarkCallback&& cb,
+                                size_t highWaterMark) {
+    _highWaterMarkCallback = std::move(cb);
+    _highWaterMark = highWaterMark;
+  }
+
+  void onClose(const CloseCallback& cb) {
+    _closeCallback = cb;
+  }
+  void onClose(CloseCallback&& cb) {
+    _closeCallback = std::move(cb);
+  }
+
+  void connectionEstablished();
+  void connectionDestoryed();
+ private:
+  enum StateE { kConnecting, kConnected, kDisconnecting, kDisconnected };
+  void handleRead(Timestamp receiveTime);
+  void handleWrite();
+  void handleClose();
+  void handleError();
+
+  void shutdownInLoop();
+
+  void sendInLoop(const StringPiece& message);
+  void sendInLoop(const void* message, size_t len);
+  void sendInLoop(std::string&& message);
+
+  void startReadInLoop();
+  void stopReadInLoop();
+
+  void setState(StateE s) { _state = s; }
+  const char* stateToString() const;
+
+  EventLoop* _loop;
+  const std::string _name;
+  StateE _state;
+  std::unique_ptr<Socket> _socket;
+  std::unique_ptr<Channel> _channel;
+  const InetAddress _localAddress;
+  const InetAddress _peerAddress;
+  ConnectionCallback _connectionCallback;
+  MessageCallback _messageCallback;
+  WriteCompletedCallback _writeCompletedCallback;
+  HighWaterMarkCallback _highWaterMarkCallback;
+  CloseCallback _closeCallback;
+  size_t _highWaterMark;
+  Buffer _inputBuffer;
+  Buffer _outputBuffer;
+  bool _reading;
+  Timestamp _createTime;
+  Timestamp _lastReceiveTime;
+  size_t _bytesRecevied;
+  size_t _bytesSent;
+};
+
+}  // namespace net
+}  // namespace tnet
 
 #endif  // TNET_NET_TCPCONNECTION_H

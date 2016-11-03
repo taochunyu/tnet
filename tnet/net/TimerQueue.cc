@@ -22,7 +22,7 @@ TimerQueue::TimerQueue(EventLoop* loop)
       _timers(cmp),
       _callingExpiredTimers(false),
       _cancelingTimers(cmp) {
-  _timerfdChannel.setReadCallback([this]{
+  _timerfdChannel.onReadable([this]{
     handleRead();
   });
   _timerfdChannel.enableReading();
