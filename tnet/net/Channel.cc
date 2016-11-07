@@ -32,6 +32,11 @@ void Channel::handleEvent() {
   }
 }
 
+void Channel::tie(const std::shared_ptr<void>& obj) {
+  _tie = obj;
+  _tied = true;
+}
+
 void Channel::update() {
   int a = this->fd();
   _loop->updateChannel(this);

@@ -44,6 +44,7 @@ class Channel : tnet::nocopyable {
     _errorCallback = std::move(cb);
   }
 
+  void tie(const std::shared_ptr<void>&);
   int fd() const { return _fd; }
   int events() const { return _events; }
   void set_revents(int revt) { _revents = revt; }
@@ -65,6 +66,12 @@ class Channel : tnet::nocopyable {
     _events = kNoneEvent;
     update();
   }
+  bool isWriting() const {
+    return _events & kWriteEvent;
+  }
+  bool isReading() const {
+    return _events & kReadEvent;
+  }
   // for Poller
   int index() const { return _index; }
   void set_index(int idx) { _index = idx; }
@@ -85,7 +92,8 @@ class Channel : tnet::nocopyable {
   int _index;
 
   bool _addedToLoop;
-
+  std::weak_ptr<void> _tie;
+  bool _tied;
   EventCallback _readCallback;
   EventCallback _writeCallback;
   EventCallback _errorCallback;

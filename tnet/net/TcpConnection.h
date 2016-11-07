@@ -19,7 +19,7 @@ class Channel;
 class EventLoop;
 class Socket;
 
-class TcpConnection : tnet::nocopyable {
+class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnection> {
  public:
   /// Constructs a TcpConnection with a connected sockfd
   /// User should not create this object.
@@ -44,7 +44,7 @@ class TcpConnection : tnet::nocopyable {
   void forceCloseWithDelay();
   void setTcpNoDelay(bool on);
 
-  void send(const void* message, int len);
+  void send(const void* message, size_t len);
   void send(std::string&& message);
   void send(const StringPiece& message);
   void send(Buffer* message);
