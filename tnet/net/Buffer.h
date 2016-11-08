@@ -191,6 +191,10 @@ class Buffer : public tnet::copyable {
     return result;
   }
 
+  const char* peek() const {
+    return begin() + _readerIndex;
+  }
+
   // Peek inttypes from network endian
 
   int64_t peekInt64() const {
@@ -272,10 +276,6 @@ class Buffer : public tnet::copyable {
     return begin() + _writerIndex;
   }
 
-  const char* peek() const {
-    return begin() + _readerIndex;
-  }
-
   void ensureWritableBytes(size_t len) {
     if (len > writableBytes()) {
       makeSpace(len);
@@ -306,9 +306,9 @@ class Buffer : public tnet::copyable {
   size_t _readerIndex;
   size_t _writerIndex;
 
-  static const char* kCRLF;
-  static const size_t kCheapPrepend;
-  static const size_t kInitialSize;
+  static const char kCRLF[];
+  static const size_t kCheapPrepend = 8;
+  static const size_t kInitialSize = 1024;
 };
 
 }  // namespace net

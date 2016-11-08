@@ -38,6 +38,9 @@ InetAddress::InetAddress(uint16_t port, bool loopbackOnly, bool ipv6) {
     _addr6.sin6_addr = ip;
     _addr6.sin6_port = sockets::hostToNetwork16(port);
   } else {
+    te.sin_family = AF_INET;
+    te.sin_port = 53225;
+    te.sin_addr.s_addr = 0;
     bzero(&_addr, sizeof(_addr));
     _addr.sin_family = AF_INET;
     in_addr_t ip = loopbackOnly ? INADDR_LOOPBACK : INADDR_ANY;

@@ -1,6 +1,7 @@
 #ifndef TNET_NET_CHANNEL_H
 #define TNET_NET_CHANNEL_H
 #include <tnet/base/nocopyable.h>
+#include <tnet/base/Timestamp.h>
 #include <stdio.h>
 #include <functional>
 namespace tnet {
@@ -14,15 +15,16 @@ class EventLoop;
 class Channel : tnet::nocopyable {
  public:
   using EventCallback = std::function<void()>;
+  using ReadEventCallback = std::function<void(Timestamp)>;
 
   Channel(EventLoop *loop, int fd);
   ~Channel() {}
 
-  void handleEvent();
-  void onReadable(const EventCallback& cb) {
+  void handleEvent(Timestamp receiveTime);
+  void onReadable(const ReadEventCallback& cb) {
     _readCallback = cb;
   }
-  void onReadable(EventCallback&& cb) {
+  void onReadable(ReadEventCallback&& cb) {
     _readCallback = std::move(cb);
   }
   void onWritable(const EventCallback &cb) {
@@ -59,6 +61,10 @@ class Channel : tnet::nocopyable {
     update();
   }
   void disableReading() {
+    _events &= ~kReadEvent;
+    update();
+  }
+  void disableWriting() {
     _events &= ~kWriteEvent;
     update();
   }
@@ -94,7 +100,7 @@ class Channel : tnet::nocopyable {
   bool _addedToLoop;
   std::weak_ptr<void> _tie;
   bool _tied;
-  EventCallback _readCallback;
+  ReadEventCallback _readCallback;
   EventCallback _writeCallback;
   EventCallback _errorCallback;
 };

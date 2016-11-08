@@ -34,7 +34,7 @@ class Socket : tnet::nocopyable {
   void shutdownWrite();
 
   // Enable/Disable TCP_NODELY (Disable/Enable Nagle's algorithm)
-  void setTcpNoDely(bool on);
+  void setTcpNoDelay(bool on);
   // Enable/Disable SO_REUSEADDR
   void setReuseAddr(bool on);
   // Enable/Disable SO_REUSEPORT

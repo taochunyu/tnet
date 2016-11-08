@@ -1,6 +1,7 @@
 #include <tnet/net/Channel.h>
 #include <tnet/net/EventLoop.h>
 #include <tnet/base/Logging.h>
+#include <tnet/base/Timestamp.h>
 #include <poll.h>
 
 #ifndef POLLRDHUP
@@ -17,7 +18,7 @@ const int Channel::kWriteEvent = POLLOUT;
 Channel::Channel(EventLoop* loop, int fd)
   : _loop(loop), _fd(fd), _events(0), _revents(0), _index(-1) {}
 
-void Channel::handleEvent() {
+void Channel::handleEvent(Timestamp receiveTime) {
   if (_revents & POLLNVAL) {
     LOG_WARN << "Channel::handle_event() POLLNVAL";
   }
@@ -25,7 +26,7 @@ void Channel::handleEvent() {
     if (_errorCallback) _errorCallback();
   }
   if (_revents & (POLLIN | POLLPRI | POLLRDHUP)) {
-    if (_readCallback) _readCallback();
+    if (_readCallback) _readCallback(receiveTime);
   }
   if (_revents & POLLOUT) {
     if (_writeCallback) _writeCallback();

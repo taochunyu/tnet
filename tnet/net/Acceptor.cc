@@ -24,7 +24,7 @@ Acceptor::Acceptor(EventLoop* loop,
   _acceptSocket.setReuseAddr(true);
   _acceptSocket.setReusePort(reusePort);
   _acceptSocket.bindAddress(listenAddr);
-  _acceptChannel.onReadable([this]{ handleRead(); });
+  _acceptChannel.onReadable([this](Timestamp receiveTime){ handleRead(); });
 }
 
 Acceptor::~Acceptor() {

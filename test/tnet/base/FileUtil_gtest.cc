@@ -8,7 +8,7 @@
 #include <string>
 using namespace tnet;
 
-TEST(FileUtilTest, OnlyInOSX10_11) {
+TEST(FileUtilTest, OnlyInOSX) {
   std::string result;
   char buffer[32];
   int64_t size = 0;

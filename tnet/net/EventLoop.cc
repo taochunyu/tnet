@@ -48,9 +48,9 @@ void EventLoop::loop() {
   _quit = false;
   while (!_quit) {
     _activeChannels.clear();
-    _poller -> poll(kPollTimeMs, &_activeChannels);
+    _pollReturnTime = _poller -> poll(kPollTimeMs, &_activeChannels);
     for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
-      (*it) -> handleEvent();
+      (*it) -> handleEvent(_pollReturnTime);
     }
     LOG_TRACE << "EventLoop " << this << " stop looping";
     _looping = false;

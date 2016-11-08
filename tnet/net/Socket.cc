@@ -45,7 +45,7 @@ void Socket::shutdownWrite() {
   sockets::shutdownWrite(_sockfd);
 }
 
-void Socket::setTcpNoDely(bool on) {
+void Socket::setTcpNoDelay(bool on) {
   int optval = on ? 1 : 0;
   int ret = ::setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY,
                &optval, static_cast<socklen_t>(sizeof(optval)));

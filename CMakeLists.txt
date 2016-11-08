@@ -7,7 +7,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -std=c++11")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -std=c++14")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -finline-limit=1000 -DNDEBUG")
 
 include_directories(${PROJECT_SOURCE_DIR})

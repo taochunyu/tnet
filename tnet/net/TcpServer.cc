@@ -32,18 +32,18 @@ TcpServer::TcpServer(EventLoop* loop,
 
 TcpServer::~TcpServer() {
   _loop->assertInLoopThread();
-  LOG_TRACE << "TcpServer::~TcpServer[" << name << "] destructing";
+  LOG_TRACE << "TcpServer::~TcpServer[" << _name << "] destructing";
   for (auto it = _connections.begin(); it != _connections.end(); it++) {
-    std::shared_ptr<TcpConnection> conn(it->second());
+    std::shared_ptr<TcpConnection> conn(it->second);
     it->second.reset();
-    conn->getLoop()->runInLoop([&conn]{ conn.connectionDestroyed(); })
+    conn->getLoop()->runInLoop([&conn]{ conn->connectionDestoryed(); });
     conn.reset();
   }
 }
 
 void TcpServer::setThreadNum(int numThreads) {
   assert(numThreads >= 0);
-  _threadPool.setThreadNum(numThreads);
+  _threadPool->setThreadNum(numThreads);
 }
 
 void TcpServer::start() {
@@ -51,13 +51,13 @@ void TcpServer::start() {
     _started.store(1);
     _threadPool->start(_threadInitCallback);
     assert(!_acceptor->listenning());
-    _loop->runInLoop([&_acceptor]{ _acceptor->listen(); });
+    _loop->runInLoop([this]{ _acceptor->listen(); });
   }
 }
 
 void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
   _loop->assertInLoopThread();
-  EventLoop* ioLoop = _threadPool.getNextLoop();
+  EventLoop* ioLoop = _threadPool->getNextLoop();
   char buf[64];
   snprintf(buf, sizeof(buf), "-%s#%d", _ipPort.c_str(), _nextConnId);
   ++_nextConnId;
@@ -73,7 +73,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
   conn->onMessage(_messageCallback);
   conn->onWriteCompleted(_writeCompletedCallback);
   conn->onClose([this](auto conn){ removeConnection(conn); });
-  ioLoop->runInLoop([&conn]{ conn.connectionEstablished(); });
+  ioLoop->runInLoop([&conn]{ conn->connectionEstablished(); });
 }
 
 void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
@@ -81,12 +81,12 @@ void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
 }
 
 void TcpServer::removeConnectionInLoop(const std::shared_ptr<TcpConnection>& conn) {
-  _loop.assertInLoopThread();
+  _loop->assertInLoopThread();
   LOG_INFO
     << "TcpServer::removeConnectionInLoop [" << _name
     << "] - connection " << conn->name();
   size_t n = _connections.erase(conn->name());
   assert(n == 1);
   EventLoop* ioLoop = conn->getLoop();
-  ioLoop->queueInLoop([&conn]{ conn.connectionDestoryed(); });
+  ioLoop->queueInLoop([&conn]{ conn->connectionDestoryed(); });
 }

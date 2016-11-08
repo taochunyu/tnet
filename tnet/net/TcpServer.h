@@ -55,10 +55,11 @@ class TcpServer : tnet::nocopyable {
   void start();
 
   /// Not thread safe.
-  void onConnected(const ConnectionCallback& cb) {
+  void onConnection(const ConnectionCallback& cb) {
     _connectionCallback = cb;
   }
-  void onConnected(ConnectionCallback&& cb) {
+
+  void onConnection(ConnectionCallback&& cb) {
     _connectionCallback = std::move(cb);
   }
 

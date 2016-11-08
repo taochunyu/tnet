@@ -22,7 +22,10 @@ class InetAddress : tnet::copyable {
   std::string toIpPort() const;
   uint16_t toPort() const;
 
-  const struct sockaddr* getSockAddr() const { return sockets::sockaddr_cast(&_addr6); }
+  //const struct sockaddr* getSockAddr() const { return sockets::sockaddr_cast(&_addr6); }
+  const struct sockaddr* getSockAddr() const {
+    return (const struct sockaddr*)&te;
+  }
   void setSockAddr6(const struct sockaddr_in6& addr) { _addr6 = addr; }
 
   uint32_t ipNetEndian() const;
@@ -34,6 +37,7 @@ class InetAddress : tnet::copyable {
     struct sockaddr_in _addr;
     struct sockaddr_in6 _addr6;
   };
+  struct sockaddr_in te;
 };
 
 }  // net

@@ -8,3 +8,4 @@ include_directories(${GTEST_INCLUDES})
 
 
 add_subdirectory(tnet)
+add_subdirectory(byExamples)

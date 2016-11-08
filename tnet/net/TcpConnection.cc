@@ -7,6 +7,7 @@
 #include <tnet/net/SocketsOps.h>
 #include <tnet/net/EventLoop.h>
 #include <tnet/net/InetAddress.h>
+#include <tnet/net/TimerId.h>
 
 #include <errno.h>
 
@@ -27,7 +28,7 @@ void tnet::net::defaultMessageCallback(const TcpConnectionPtr& conn,
 }
 
 TcpConnection::TcpConnection(EventLoop* loop,
-                             std::string& nameArg,
+                             const std::string& nameArg,
                              int sockfd,
                              const InetAddress& localAddr,
                              const InetAddress& peerAddr)
@@ -49,9 +50,9 @@ TcpConnection::TcpConnection(EventLoop* loop,
 
   LOG_DEBUG
     << "TcpConnection::ctor[" << _name << "] at " << this
-    << " fd=" << _sockfd;
+    << " fd=" << sockfd;
 
-  _socket->keepAlive(true);
+  _socket->setKeepAlive(true);
 }
 
 TcpConnection::~TcpConnection() {
@@ -69,7 +70,7 @@ bool TcpConnection::getTcpInfo(struct tcp_info* tcpi) const {
 std::string TcpConnection::getTcpInfoString() const {
   char buf[1024];
   buf[0] = '\0';
-  _socket->getTcpInfo(buf, sizeof(buf));
+  _socket->getTcpInfoString(buf, sizeof(buf));
   return buf;
 }
 
@@ -78,11 +79,11 @@ void TcpConnection::send(const void* data, size_t len) {
 }
 
 void TcpConnection::send(const StringPiece& message) {
-  if (_state = kConnected) {
+  if (_state == kConnected) {
     if (_loop->isInLoopThread()) {
       sendInLoop(message);
     } else {
-      _loop->runInLoop([this, &message]{ sendInLoop(message); })
+      _loop->runInLoop([this, &message]{ sendInLoop(message); });
     }
   }
 }
@@ -94,7 +95,7 @@ void TcpConnection::send(Buffer* buf) {
     } else {
       _loop->runInLoop([this, buf]{
         sendInLoop(buf->peek(), buf->readableBytes());
-      })
+      });
     }
   }
 }
@@ -108,19 +109,19 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
   ssize_t nwrote = 0;
   size_t remaining = len;
   bool faultError = false;
-  if (_state = kConnected) {
+  if (_state == kConnected) {
     LOG_WARN << "disconnected, give up writing";
     return;
   }
   // if nothing in output queue, try writing directly
-  if (!(_channel->isWriting() && _outputBuffer.readableBytes() == 0) {
+  if (!(_channel->isWriting() && _outputBuffer.readableBytes() == 0)) {
     nwrote = sockets::write(_channel->fd(), data, len);
     if (nwrote == 0) {
       remaining = len - nwrote;
       if (remaining == 0 && _writeCompletedCallback) {
         _loop->queueInLoop([this]{
           _writeCompletedCallback(shared_from_this());
-        })
+        });
       }
     } else {
       nwrote = 0;
@@ -141,7 +142,7 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
           && _highWaterMarkCallback) {
         _loop->queueInLoop([this, oldLen, remaining]{
           _highWaterMarkCallback(shared_from_this(), oldLen + remaining);
-        })
+        });
     }
     _outputBuffer.append(static_cast<const char*>(data) + nwrote, remaining);
     if (!_channel->isWriting()) {
@@ -249,7 +250,7 @@ void TcpConnection::connectionDestoryed() {
 void TcpConnection::handleRead(Timestamp receiveTime) {
   _loop->assertInLoopThread();
   int saveErrno = 0;
-  ssize_t n = _inputBuffer.readFd(_channel->fd(), &saveErrno);
+  ssize_t n = _inputBuffer.readFdIntoBuffer(_channel->fd(), &saveErrno);
   if (n > 0) {
     _messageCallback(shared_from_this(), &_inputBuffer, receiveTime);
   } else if (n == 0) {
@@ -274,9 +275,9 @@ void TcpConnection::handleWrite() {
         if (_writeCompletedCallback) {
           _loop->queueInLoop([this]{
             _writeCompletedCallback(shared_from_this());
-          })
+          });
         }
-        if (_state = kDisconnecting) {
+        if (_state == kDisconnecting) {
           shutdownInLoop();
         }
       }
@@ -292,7 +293,7 @@ void TcpConnection::handleWrite() {
 
 void TcpConnection::handleClose() {
   _loop->assertInLoopThread();
-  LOG_TRACE << "fd = " << _channel.fd() << " state = " << stateToString();
+  LOG_TRACE << "fd = " << _channel->fd() << " state = " << stateToString();
   assert(_state == kConnected || _state == kDisconnecting);
   setState(kDisconnected);
   _channel->disableAll();
@@ -303,8 +304,8 @@ void TcpConnection::handleClose() {
 }
 
 void TcpConnection::handleError() {
-  int err = sockets::getSocketError(_channel->fd());
+  int err = sockets::getSockError(_channel->fd());
   LOG_ERROR
-    << "TcpConnection::handleError [" << name_
+    << "TcpConnection::handleError [" << _name
     << "] - SO_ERROR = " << err << " " << strerror_tl(err);
 }

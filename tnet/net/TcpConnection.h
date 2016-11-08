@@ -19,7 +19,7 @@ class Channel;
 class EventLoop;
 class Socket;
 
-class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnection> {
+class TcpConnection : tnet::nocopyable, public std::enable_shared_from_this<TcpConnection> {
  public:
   /// Constructs a TcpConnection with a connected sockfd
   /// User should not create this object.
@@ -41,14 +41,13 @@ class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnecti
 
   void shutdown();
   void forceClose();
-  void forceCloseWithDelay();
+  void forceCloseWithDelay(double seconds);
+  void forceCloseInLoop();
   void setTcpNoDelay(bool on);
 
   void send(const void* message, size_t len);
-  void send(std::string&& message);
   void send(const StringPiece& message);
   void send(Buffer* message);
-  void send(Buffer&& message);
 
   void startRead();
   void stopRead();
@@ -66,40 +65,22 @@ class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnecti
   // void std::any getContext() const { return _context; }
   // void std::any* getMutableContext() { return &_context; }
 
-  void onConnection(const ConnectionCallback& cb) {
+  void onConnected(const ConnectionCallback& cb) {
     _connectionCallback = cb;
-  }
-  void onConnection(ConnectionCallback&& cb) {
-    _connectionCallback = std::move(cb);
   }
   void onMessage(const MessageCallback& cb) {
     _messageCallback = cb;
   }
-  void onMessage(MessageCallback&& cb) {
-    _messageCallback = std::move(cb);
-  }
   void onWriteCompleted(const WriteCompletedCallback& cb) {
     _writeCompletedCallback = cb;
-  }
-  void onWriteCompleted(WriteCompletedCallback&& cb) {
-    _writeCompletedCallback = std::move(cb);
   }
   void onHighWaterMark(const HighWaterMarkCallback& cb,
                                 size_t highWaterMark) {
     _highWaterMarkCallback = cb;
     _highWaterMark = highWaterMark;
   }
-  void onHighWaterMark(HighWaterMarkCallback&& cb,
-                                size_t highWaterMark) {
-    _highWaterMarkCallback = std::move(cb);
-    _highWaterMark = highWaterMark;
-  }
-
   void onClose(const CloseCallback& cb) {
     _closeCallback = cb;
-  }
-  void onClose(CloseCallback&& cb) {
-    _closeCallback = std::move(cb);
   }
 
   void connectionEstablished();
@@ -115,7 +96,6 @@ class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnecti
 
   void sendInLoop(const StringPiece& message);
   void sendInLoop(const void* message, size_t len);
-  void sendInLoop(std::string&& message);
 
   void startReadInLoop();
   void stopReadInLoop();
@@ -139,10 +119,10 @@ class TcpConnection : tnet::nocopyable, std::enable_shared_from_this<TcpConnecti
   Buffer _inputBuffer;
   Buffer _outputBuffer;
   bool _reading;
-  Timestamp _createTime;
-  Timestamp _lastReceiveTime;
-  size_t _bytesRecevied;
-  size_t _bytesSent;
+  // Timestamp _createTime;
+  // Timestamp _lastReceiveTime;
+  // size_t _bytesRecevied;
+  // size_t _bytesSent;
 };
 
 }  // namespace net

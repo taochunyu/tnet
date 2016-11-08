@@ -23,13 +23,13 @@ void setNonblockingAndCloseExec(int sockfd) {
   flags |= O_NONBLOCK;
   int ret = ::fcntl(sockfd, F_SETFL, flags);
   if (ret < 0) {
-    LOG_SYSFATAL << "sockets::setNonblockingAndCloseExec";
+    LOG_SYSFATAL << "sockets::setNonblockingAndCloseExec: " << strerror(errno);
   }
   flags =::fcntl(sockfd, F_GETFD, 0);
   flags |= FD_CLOEXEC;
   ret = ::fcntl(sockfd, F_SETFD, flags);
   if (ret < 0) {
-    LOG_SYSFATAL << "sockets::setNonblockingAndCloseExec";
+    LOG_SYSFATAL << "sockets::setNonblockingAndCloseExec: " << strerror(errno);
   }
 }
 
@@ -58,23 +58,23 @@ const struct sockaddr_in6* sockaddr_in6_cast(const struct sockaddr* addr) {
 int createNonblockingOrDie(sa_family_t family) {
   int sockfd = ::socket(family, SOCK_STREAM, IPPROTO_TCP);
   if (sockfd < 0) {
-    LOG_SYSFATAL << "sockets::createNonblockingOrDie";
+    LOG_SYSFATAL << "sockets::createNonblockingOrDie: " << strerror(errno);
   }
   setNonblockingAndCloseExec(sockfd);
   return sockfd;
 }
 
-void bindOrDie(int sockfd, struct sockaddr* addr) {
+void bindOrDie(int sockfd, const struct sockaddr* addr) {
   int ret = ::bind(sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
   if (ret < 0) {
-    LOG_SYSFATAL << "sockets::bindOrDie";
+    LOG_SYSFATAL << "sockets::bindOrDie: " << strerror(errno);
   }
 }
 
 void listenOrDie(int sockfd) {
   int ret = ::listen(sockfd, SOMAXCONN);
   if (ret < 0) {
-    LOG_SYSFATAL << "sockets::listenOrDie";
+    LOG_SYSFATAL << "sockets::listenOrDie: " << strerror(errno);
   }
 }
 

@@ -18,7 +18,7 @@ using TimerCallback         = function<void()>;
 using ConnectionCallback    = function<void(const TcpConnectionPtr&)>;
 using CloseCallback         = function<void(const TcpConnectionPtr&)>;
 using WriteCompletedCallback = function<void(const TcpConnectionPtr&)>;
-using HighWaterMarkCallback = function<void(const TcpConnectionPtr&)>;
+using HighWaterMarkCallback = function<void(const TcpConnectionPtr&, size_t)>;
 using MessageCallback       = function<void(const TcpConnectionPtr&, Buffer*, Timestamp)>;
 
 void defaultConnectionCallback(const TcpConnectionPtr &conn);
