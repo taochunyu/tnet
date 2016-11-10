@@ -17,8 +17,8 @@ class Timer : tnet::nocopyable {
         _interval(interval),
         _repeat(interval > 0.0),
         _sequence(std::atomic_load(&_numCreated)) {}
-  Timer(const TimerCallback&& cb, Timestamp when, double interval)
-      : _callback(cb),
+  Timer(TimerCallback&& cb, Timestamp when, double interval)
+      : _callback(std::move(cb)),
         _expiration(when),
         _interval(interval),
         _repeat(interval > 0.0),

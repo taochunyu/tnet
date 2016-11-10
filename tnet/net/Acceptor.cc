@@ -24,7 +24,11 @@ Acceptor::Acceptor(EventLoop* loop,
   _acceptSocket.setReuseAddr(true);
   _acceptSocket.setReusePort(reusePort);
   _acceptSocket.bindAddress(listenAddr);
-  _acceptChannel.onReadable([this](Timestamp receiveTime){ handleRead(); });
+  LOG_INFO << "Acceptor ctor";
+  _acceptChannel.onReadable([this](Timestamp receiveTime){
+    LOG_INFO << "Acceptor will handle Read";
+    handleRead();
+  });
 }
 
 Acceptor::~Acceptor() {

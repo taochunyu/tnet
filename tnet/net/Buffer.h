@@ -32,7 +32,7 @@ class Buffer : public tnet::copyable {
       _readerIndex(kCheapPrepend),
       _writerIndex(kCheapPrepend) {
     assert(readableBytes() == 0);
-    assert(writableBytes() == 0);
+    assert(writableBytes() == initialSize);
     assert(prependableBytes() == kCheapPrepend);
   }
 

@@ -6,6 +6,7 @@
 #include <tnet/net/EventLoop.h>
 #include <tnet/net/InetAddress.h>
 #include <tnet/net/TcpConnection.h>
+#include <tnet/net/TimerId.h>
 #include <stdio.h>
 
 using namespace tnet;
@@ -24,12 +25,14 @@ auto handleMess = [](auto conn, auto buf, auto time) {
 
 int main(int argc, char const *argv[]) {
   EventLoop loop;
-  InetAddress listenAddr(2000);
+  InetAddress listenAddr(8080, true, false);
   TcpServer server(&loop, listenAddr, "EchoSever");
   server.onConnection(handleConn);
   server.onMessage(handleMess);
-  server.setThreadNum(1);
+  server.setThreadNum(0);
   server.start();
+  LOG_INFO << "EchoSever Start";
+  //loop.runEvery(1, []{});
   loop.loop();
   return 0;
 }

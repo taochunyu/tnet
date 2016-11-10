@@ -15,6 +15,7 @@ using namespace tnet;
 using namespace tnet::net;
 
 void tnet::net::defaultConnectionCallback(const TcpConnectionPtr& conn) {
+  LOG_INFO << "defaultConnectionCallback";
   LOG_TRACE
     << conn->localAddress().toIpPort() << " -> "
     << conn->peerAddress().toIpPort() << " is "
@@ -228,8 +229,9 @@ void TcpConnection::stopReadInLoop() {
   }
 }
 
-void TcpConnection::connectionEstablished() {
+void TcpConnection::establishConnection() {
   _loop->assertInLoopThread();
+  LOG_INFO << "TcpConnection::establishConnection";
   assert(_state == kConnecting);
   setState(kConnected);
   _channel->tie(shared_from_this());
@@ -237,7 +239,7 @@ void TcpConnection::connectionEstablished() {
   _connectionCallback(shared_from_this());
 }
 
-void TcpConnection::connectionDestoryed() {
+void TcpConnection::destoryConnection() {
   _loop->assertInLoopThread();
   if (_state == kConnected) {
     setState(kConnected);

@@ -29,7 +29,7 @@ class TimerQueue : tnet::nocopyable {
                    Timestamp when,
                    double interval);
 
-  TimerId addTimer(const TimerCallback&& cb,
+  TimerId addTimer(TimerCallback&& cb,
                    Timestamp when,
                    double interval);
 

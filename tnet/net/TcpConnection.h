@@ -83,8 +83,8 @@ class TcpConnection : tnet::nocopyable, public std::enable_shared_from_this<TcpC
     _closeCallback = cb;
   }
 
-  void connectionEstablished();
-  void connectionDestoryed();
+  void establishConnection();
+  void destoryConnection();
  private:
   enum StateE { kConnecting, kConnected, kDisconnecting, kDisconnected };
   void handleRead(Timestamp receiveTime);

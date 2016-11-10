@@ -36,7 +36,7 @@ TcpServer::~TcpServer() {
   for (auto it = _connections.begin(); it != _connections.end(); it++) {
     std::shared_ptr<TcpConnection> conn(it->second);
     it->second.reset();
-    conn->getLoop()->runInLoop([&conn]{ conn->connectionDestoryed(); });
+    conn->getLoop()->runInLoop([&conn]{ conn->destoryConnection(); });
     conn.reset();
   }
 }
@@ -47,11 +47,14 @@ void TcpServer::setThreadNum(int numThreads) {
 }
 
 void TcpServer::start() {
-  if (_started.load()) {
+  if (_started.load() == 0) {
     _started.store(1);
     _threadPool->start(_threadInitCallback);
     assert(!_acceptor->listenning());
-    _loop->runInLoop([this]{ _acceptor->listen(); });
+    _loop->runInLoop([this]{
+      _acceptor->listen();
+      LOG_INFO << "TcpServer started";
+    });
   }
 }
 
@@ -65,7 +68,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
   LOG_INFO
     << "TcpConnection::newConnection [" << _name
     << "] - new connection [" << connName
-    << "] from" << peerAddr.toIpPort();
+    << "] from " << peerAddr.toIpPort();
   InetAddress localAddr(sockets::getLocalAddr(sockfd));
   auto conn = std::make_shared<TcpConnection>(ioLoop, connName, sockfd, localAddr, peerAddr);
   _connections[connName] = conn;
@@ -73,7 +76,9 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
   conn->onMessage(_messageCallback);
   conn->onWriteCompleted(_writeCompletedCallback);
   conn->onClose([this](auto conn){ removeConnection(conn); });
-  ioLoop->runInLoop([&conn]{ conn->connectionEstablished(); });
+  ioLoop->runInLoop([&conn]{
+    printf("hehe\n");
+    conn->establishConnection(); });
 }
 
 void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
@@ -88,5 +93,5 @@ void TcpServer::removeConnectionInLoop(const std::shared_ptr<TcpConnection>& con
   size_t n = _connections.erase(conn->name());
   assert(n == 1);
   EventLoop* ioLoop = conn->getLoop();
-  ioLoop->queueInLoop([&conn]{ conn->connectionDestoryed(); });
+  ioLoop->queueInLoop([&conn]{ conn->destoryConnection(); });
 }

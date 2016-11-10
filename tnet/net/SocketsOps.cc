@@ -65,7 +65,7 @@ int createNonblockingOrDie(sa_family_t family) {
 }
 
 void bindOrDie(int sockfd, const struct sockaddr* addr) {
-  int ret = ::bind(sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+  int ret = ::bind(sockfd, addr, addr->sa_len);
   if (ret < 0) {
     LOG_SYSFATAL << "sockets::bindOrDie: " << strerror(errno);
   }
@@ -79,6 +79,7 @@ void listenOrDie(int sockfd) {
 }
 
 int accept(int sockfd, struct sockaddr_in6* addr) {
+  LOG_INFO << "accepting";
   socklen_t addrlen = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
   int connfd = ::accept(sockfd, sockaddr_cast(addr), &addrlen);
   if (connfd < 0) {

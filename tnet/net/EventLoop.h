@@ -54,9 +54,9 @@ class EventLoop : tnet::nocopyable {
   TimerId runEvery(const double interval, const TimerCallback& cb);
   void cancel(TimerId timerId);
 
-  TimerId runAt(const Timestamp& time, const TimerCallback&& cb);
-  TimerId runAfter(const double delay, const TimerCallback&& cb);
-  TimerId runEvery(const double interval, const TimerCallback&& cb);
+  TimerId runAt(const Timestamp& time, TimerCallback&& cb);
+  TimerId runAfter(const double delay, TimerCallback&& cb);
+  TimerId runEvery(const double interval, TimerCallback&& cb);
 
   // internal usage
   void wakeup();

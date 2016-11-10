@@ -50,6 +50,7 @@ void EventLoop::loop() {
     _activeChannels.clear();
     _pollReturnTime = _poller -> poll(kPollTimeMs, &_activeChannels);
     for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
+      printf("%lu\n", _activeChannels.size());
       (*it) -> handleEvent(_pollReturnTime);
     }
     LOG_TRACE << "EventLoop " << this << " stop looping";
@@ -112,19 +113,19 @@ TimerId EventLoop::runEvery(const double interval, const TimerCallback& cb) {
   return _timerQueue->addTimer(cb, time, interval);
 }
 
-TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback&& cb) {
-  return _timerQueue->addTimer(cb, time, 0.0);
+TimerId EventLoop::runAt(const Timestamp& time, TimerCallback&& cb) {
+  return _timerQueue->addTimer(std::move(cb), time, 0.0);
 }
 
-TimerId EventLoop::runAfter(const double delay, const TimerCallback&& cb) {
+TimerId EventLoop::runAfter(const double delay, TimerCallback&& cb) {
   Timestamp time(addTime(Timestamp::now(), delay));
   printf("%lld\n", time.microSecondsSinceEpoch());
-  return runAt(time, cb);
+  return runAt(time, std::move(cb));
 }
 
-TimerId EventLoop::runEvery(const double interval, const TimerCallback&& cb) {
+TimerId EventLoop::runEvery(const double interval, TimerCallback&& cb) {
   Timestamp time(addTime(Timestamp::now(), interval));
-  return _timerQueue->addTimer(cb, time, interval);
+  return _timerQueue->addTimer(std::move(cb), time, interval);
 }
 
 void EventLoop::cancel(TimerId timerId) {

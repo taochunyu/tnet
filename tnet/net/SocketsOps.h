@@ -29,7 +29,9 @@ int getSockError(int sockfd);
 
 const struct sockaddr* sockaddr_cast(const struct sockaddr_in* addr);
 const struct sockaddr* sockaddr_cast(const struct sockaddr_in6* addr);
+
 struct sockaddr* sockaddr_cast(struct sockaddr_in6* addr);
+
 const struct sockaddr_in* sockaddr_in_cast(const struct sockaddr* addr);
 const struct sockaddr_in6* sockaddr_in6_cast(const struct sockaddr* addr);
 
