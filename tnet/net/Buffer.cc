@@ -22,7 +22,7 @@ int Buffer::readFdIntoBuffer(int fd, int* savedError) {
   char extrabuf[65536];
   struct iovec vec[2];
   const size_t writable = writableBytes();
-  vec[0].iov_base = begin() + writable;
+  vec[0].iov_base = begin() + _writerIndex;
   vec[0].iov_len = writable;
   vec[1].iov_base = extrabuf;
   vec[1].iov_len = sizeof(extrabuf);

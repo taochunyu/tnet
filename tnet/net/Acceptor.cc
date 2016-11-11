@@ -32,6 +32,7 @@ Acceptor::Acceptor(EventLoop* loop,
 }
 
 Acceptor::~Acceptor() {
+  printf("acc dtor\n");
   _acceptChannel.disableAll();
   _acceptChannel.remove();
   ::close(_idleFd);
@@ -48,6 +49,7 @@ void Acceptor::handleRead() {
   _loop->assertInLoopThread();
   InetAddress peerAddr;
   int connfd = _acceptSocket.accept(&peerAddr);
+  printf("accwptor:  %d\n", connfd);
   if (connfd > 0) {
     if (_newConnectionCallback) {
       _newConnectionCallback(connfd, peerAddr);

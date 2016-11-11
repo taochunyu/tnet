@@ -13,13 +13,12 @@ using namespace tnet;
 using namespace tnet::net;
 
 auto handleConn = [](auto conn) {
-  printf("hello\n");
   conn->send("hello");
 };
 
 auto handleMess = [](auto conn, auto buf, auto time) {
   std::string msg(buf->retrieveAllAsString());
-  LOG_TRACE << conn->name() << " recv " << msg.size() << " bytes at " << time.toString();
+  LOG_INFO << conn->name() << " recv " << msg.size() << " bytes at " << time.toString();
   conn->send(msg);
 };
 

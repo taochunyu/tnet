@@ -71,6 +71,9 @@ class EventLoop : tnet::nocopyable {
   using ChannelList = std::vector<Channel*>;
 
   void abortNotInLoopThread();
+  void handleRead();
+  void doPendingFunctors();
+  void printActiveChannels() const;
 
   bool _looping;
   bool _quit;

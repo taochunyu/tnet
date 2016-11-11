@@ -5,6 +5,7 @@
 #include <tnet/net/Poller.h>
 #include <tnet/net/TimerId.h>
 #include <tnet/net/TimerQueue.h>
+#include <tnet/net/SocketsOps.h>
 
 #include <assert.h>
 #include <unistd.h>
@@ -20,6 +21,7 @@ const int kPollTimeMs = 10000;
 }  // namespace
 
 EventLoop::EventLoop() : _looping(false),
+                         _quit(false),
                          _threadId(tnet::CurrentThread::tid()),
                          _poller(Poller::newDefaultPoller(this)),
                          _timerQueue(new TimerQueue(this)) {
@@ -46,16 +48,25 @@ void EventLoop::loop() {
   assertInLoopThread();
   _looping = true;
   _quit = false;
+  LOG_TRACE << "EventLoop " << this << " start looping";
   while (!_quit) {
+    printf("********** one loop start **********\n");
     _activeChannels.clear();
     _pollReturnTime = _poller -> poll(kPollTimeMs, &_activeChannels);
-    for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
-      printf("%lu\n", _activeChannels.size());
-      (*it) -> handleEvent(_pollReturnTime);
+    if (Logger::logLevel() <= Logger::TRACE || true) {
+      printActiveChannels();
     }
-    LOG_TRACE << "EventLoop " << this << " stop looping";
-    _looping = false;
+    _eventHandling = true;
+    for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
+      _currentActiveChannel = *it;
+      _currentActiveChannel->handleEvent(_pollReturnTime);
+    }
+    _currentActiveChannel = nullptr;
+    _eventHandling = false;
+    doPendingFunctors();
   }
+  LOG_TRACE << "EventLoop " << this << " stop looping";
+  _looping = false;
 }
 
 void EventLoop::quit() {
@@ -119,7 +130,6 @@ TimerId EventLoop::runAt(const Timestamp& time, TimerCallback&& cb) {
 
 TimerId EventLoop::runAfter(const double delay, TimerCallback&& cb) {
   Timestamp time(addTime(Timestamp::now(), delay));
-  printf("%lld\n", time.microSecondsSinceEpoch());
   return runAt(time, std::move(cb));
 }
 
@@ -132,14 +142,6 @@ void EventLoop::cancel(TimerId timerId) {
   return _timerQueue->cancel(timerId);
 }
 
-void EventLoop::wakeup() {
-  uint64_t one = 1;
-  ssize_t n = ::write(_wakeupFd[1], &one, sizeof(one));
-  if (n != sizeof(one)) {
-    LOG_SYSERR << "EventLoop::wakeup writes " << n << " bytes instead of 8";
-  }
-}
-
 void EventLoop::updateChannel(Channel* channel) {
   assert(channel->ownerLoop() == this);
   assertInLoopThread();
@@ -150,11 +152,7 @@ void EventLoop::removeChannel(Channel* channel) {
   assert(channel->ownerLoop() == this);
   assertInLoopThread();
   if (_eventHandling) {
-    assert(
-      _currentActiveChannel == channel ||
-      std::find(_activeChannels.begin(), _activeChannels.end(), channel)
-        == _activeChannels.end()
-    );
+    assert( (_currentActiveChannel == channel) || (std::find(_activeChannels.begin(), _activeChannels.end(), channel) == _activeChannels.end()) );
     _poller->removeChannel(channel);
   }
 }
@@ -167,4 +165,39 @@ void EventLoop::abortNotInLoopThread() {
   LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
             << " was created in threadId = " << _threadId
             << ", current thread id = " <<  CurrentThread::tid();
+}
+
+void EventLoop::wakeup() {
+  uint64_t one = 1;
+  ssize_t n = sockets::write(_wakeupFd[1], &one, sizeof(one));
+  if (n != sizeof(one)) {
+    LOG_SYSERR << "EventLoop::wakeup() writes " << n << " bytes instead of 8";
+  }
+}
+
+void EventLoop::handleRead() {
+  uint64_t one = 1;
+  ssize_t n = sockets::read(_wakeupFd[1], &one, sizeof(one));
+  if (n != sizeof(one)) {
+    LOG_SYSERR << "EventLoophandleRead() writes " << n << " bytes instead of 8";
+  }
+}
+
+void EventLoop::doPendingFunctors() {
+  std::vector<Functor> functions;
+  _callingPengingFunctors = true;
+  {
+    MutexLockGuard lock(_mtx);
+    functions.swap(_pendingFunctors);
+  }
+  for (int i = 0; i < functions.size(); i++) {
+    functions[i]();
+  }
+  _callingPengingFunctors = false;
+}
+
+void EventLoop::printActiveChannels() const {
+  for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
+    LOG_INFO << "{" << (*it)->reventsToString() << "} ";
+  }
 }

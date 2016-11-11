@@ -18,7 +18,9 @@ class Channel : tnet::nocopyable {
   using ReadEventCallback = std::function<void(Timestamp)>;
 
   Channel(EventLoop *loop, int fd);
-  ~Channel() {}
+  ~Channel() {
+    printf("dtor fd: %d\n", _fd);
+  }
 
   void handleEvent(Timestamp receiveTime);
   void onReadable(const ReadEventCallback& cb) {
@@ -34,10 +36,10 @@ class Channel : tnet::nocopyable {
     _writeCallback = std::move(cb);
   }
   void onClose(const EventCallback& cb) {
-    _writeCallback = cb;
+    _closeCallback = cb;
   }
   void onClose(EventCallback&& cb) {
-    _writeCallback = std::move(cb);
+    _closeCallback = std::move(cb);
   }
   void onError(const EventCallback &cb) {
     _errorCallback = cb;
@@ -84,6 +86,10 @@ class Channel : tnet::nocopyable {
 
   EventLoop* ownerLoop() const { return _loop; }
   void remove();
+
+  std::string reventsToString() const;
+  std::string eventsToString() const;
+  static std::string eventsToString(int fd, int ev);
  private:
   static const int kNoneEvent;
   static const int kReadEvent;
@@ -103,6 +109,7 @@ class Channel : tnet::nocopyable {
   ReadEventCallback _readCallback;
   EventCallback _writeCallback;
   EventCallback _errorCallback;
+  EventCallback _closeCallback;
 };
 
 }  // namespace net
