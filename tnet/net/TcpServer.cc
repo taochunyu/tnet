@@ -80,20 +80,18 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
 }
 
 void TcpServer::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
-  _loop->runInLoop([this, &conn]{ removeConnectionInLoop(conn); });
+  _loop->runInLoop([this, conn]{ removeConnectionInLoop(conn); });
 }
 
 void TcpServer::removeConnectionInLoop(const std::shared_ptr<TcpConnection>& conn) {
   _loop->assertInLoopThread();
-  printf("conn didn't 存在\n");
   LOG_INFO
     << "TcpServer::removeConnectionInLoop [" << _name
     << "] - connection " << conn->name();
   size_t n = _connections.erase(conn->name());
   assert(n == 1);
   EventLoop* ioLoop = conn->getLoop();
-  ioLoop->queueInLoop([&conn]{
-    printf("conn didn't 存在2\n");
-    conn->destoryConnection(); });
-  printf("shared_ptr count: %d\n", (int)conn.use_count());
+  ioLoop->queueInLoop([conn]{
+    conn->destoryConnection();
+  });
 }

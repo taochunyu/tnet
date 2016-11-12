@@ -28,7 +28,7 @@ int main(int argc, char const *argv[]) {
   TcpServer server(&loop, listenAddr, "EchoSever");
   server.onConnection(handleConn);
   server.onMessage(handleMess);
-  server.setThreadNum(0);
+  server.setThreadNum(1);
   server.start();
   LOG_INFO << "EchoSever Start";
   //loop.runEvery(1, []{});

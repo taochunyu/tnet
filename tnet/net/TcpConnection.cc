@@ -44,10 +44,9 @@ TcpConnection::TcpConnection(EventLoop* loop,
       _reading(true) {
   _channel->onReadable([this](Timestamp receiveTime) {
     handleRead(receiveTime);
-    printf("kk\n");
   });
   _channel->onWritable([this]{ handleWrite(); });
-  _channel->onClose([this]{ printf("oooo?\n");handleClose(); });
+  _channel->onClose([this]{ handleClose(); });
   _channel->onError([this]{ handleError(); });
 
   LOG_DEBUG
@@ -115,7 +114,6 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
     LOG_WARN << "disconnected, give up writing";
     return;
   }
-  printf("send1\n");
   // if nothing in output queue, try writing directly
   if (!(_channel->isWriting() && _outputBuffer.readableBytes() == 0)) {
     nwrote = sockets::write(_channel->fd(), data, len);
@@ -148,7 +146,6 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
         });
     }
     _outputBuffer.append(static_cast<const char*>(data) + nwrote, remaining);
-    printf("send1\n");
     if (!_channel->isWriting()) {
       _channel->enableWriting();
     }
@@ -163,7 +160,6 @@ void TcpConnection::shutdown() {
 }
 
 void TcpConnection::shutdownInLoop() {
-  printf("shutdownInLoop\n");
   _loop->assertInLoopThread();
   if (!_channel->isWriting()) {
     _socket->shutdownWrite();
@@ -248,12 +244,8 @@ void TcpConnection::destoryConnection() {
   if (_state == kConnected) {
     setState(kDisconnected);
     _channel->disableAll();
-    printf("disableAll in destoryConnection\n");
   }
-  printf("here\n");
   _channel->remove();
-  printf("here1\n");
-
 }
 
 void TcpConnection::handleRead(Timestamp receiveTime) {
@@ -263,7 +255,6 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
   if (n > 0) {
     _messageCallback(shared_from_this(), &_inputBuffer, receiveTime);
   } else if (n == 0) {
-    printf("you?\n");
     handleClose();
   } else {
     errno = saveErrno;
@@ -273,14 +264,11 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
 }
 
 void TcpConnection::handleWrite() {
-  printf("write1\n");
   _loop->assertInLoopThread();
-  *_channel;
   if (_channel->isWriting()) {
     ssize_t n = sockets::write(_channel->fd(),
                                _outputBuffer.peek(),
                                _outputBuffer.readableBytes());
-                               printf("write2\n");
     if (n > 0) {
       _outputBuffer.retrieve(n);
       if (_outputBuffer.readableBytes() == 0) {
@@ -305,20 +293,13 @@ void TcpConnection::handleWrite() {
 }
 
 void TcpConnection::handleClose() {
-  printf("_loop1\n");
   _loop->assertInLoopThread();
-  printf("_loop2\n");
   LOG_TRACE << "fd = " << _channel->fd() << " state = " << stateToString();
   LOG_INFO << "fd = " << _channel->fd() << " state = " << stateToString();
-  printf("_loop3\n");
   assert(_state == kConnected || _state == kDisconnecting);
   setState(kDisconnected);
   _channel->disableAll();
-  printf("_loop4\n");
-
   _closeCallback(shared_from_this());
-  printf("shared_ptr count: %d\n", (int)shared_from_this().use_count());
-  printf("lll\n");
 }
 
 void TcpConnection::handleError() {

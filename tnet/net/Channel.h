@@ -18,9 +18,7 @@ class Channel : tnet::nocopyable {
   using ReadEventCallback = std::function<void(Timestamp)>;
 
   Channel(EventLoop *loop, int fd);
-  ~Channel() {
-    printf("dtor fd: %d\n", _fd);
-  }
+  ~Channel() {}
 
   void handleEvent(Timestamp receiveTime);
   void onReadable(const ReadEventCallback& cb) {
