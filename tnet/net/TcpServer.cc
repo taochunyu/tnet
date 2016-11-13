@@ -76,6 +76,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr) {
   conn->onMessage(_messageCallback);
   conn->onWriteCompleted(_writeCompletedCallback);
   conn->onClose([this](auto conn){ removeConnection(conn); });
+  // 下一个事件循环建立
   ioLoop->runInLoop([&conn]{ conn->establishConnection(); });
 }
 

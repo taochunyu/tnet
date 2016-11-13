@@ -295,7 +295,6 @@ void TcpConnection::handleWrite() {
 void TcpConnection::handleClose() {
   _loop->assertInLoopThread();
   LOG_TRACE << "fd = " << _channel->fd() << " state = " << stateToString();
-  LOG_INFO << "fd = " << _channel->fd() << " state = " << stateToString();
   assert(_state == kConnected || _state == kDisconnecting);
   setState(kDisconnected);
   _channel->disableAll();
