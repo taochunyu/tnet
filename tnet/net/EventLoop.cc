@@ -28,6 +28,7 @@ EventLoop::EventLoop() : _looping(false),
   if (::pipe(_wakeupFd) == -1) {
     LOG_FATAL << "create wakeupFd mocker failed because of pipe error";
   }
+  _wakeupChannel.reset(new Channel(this, _wakeupFd[0]));
   LOG_TRACE << "EventLoop created " << this << "in thread" << _threadId;
   if (t_loopInThisThread) {
     LOG_FATAL
@@ -36,6 +37,8 @@ EventLoop::EventLoop() : _looping(false),
   } else {
     t_loopInThisThread = this;
   }
+  _wakeupChannel->onReadable([this](auto time){ handleRead(); });
+  _wakeupChannel->enableReading();
 }
 
 EventLoop::~EventLoop() {
@@ -50,7 +53,6 @@ void EventLoop::loop() {
   _quit = false;
   LOG_TRACE << "EventLoop " << this << " start looping";
   while (!_quit) {
-    printf("********** one loop start **********\n");
     _activeChannels.clear();
     _pollReturnTime = _poller -> poll(kPollTimeMs, &_activeChannels);
     if (Logger::logLevel() <= Logger::TRACE || true) {
@@ -153,8 +155,8 @@ void EventLoop::removeChannel(Channel* channel) {
   assertInLoopThread();
   if (_eventHandling) {
     assert( (_currentActiveChannel == channel) || (std::find(_activeChannels.begin(), _activeChannels.end(), channel) == _activeChannels.end()) );
-    _poller->removeChannel(channel);
   }
+  _poller->removeChannel(channel);
 }
 
 EventLoop* EventLoop::getEventLoopOfCurrentThread() {
@@ -177,7 +179,7 @@ void EventLoop::wakeup() {
 
 void EventLoop::handleRead() {
   uint64_t one = 1;
-  ssize_t n = sockets::read(_wakeupFd[1], &one, sizeof(one));
+  ssize_t n = sockets::read(_wakeupFd[0], &one, sizeof(one));
   if (n != sizeof(one)) {
     LOG_SYSERR << "EventLoophandleRead() writes " << n << " bytes instead of 8";
   }
@@ -198,6 +200,8 @@ void EventLoop::doPendingFunctors() {
 
 void EventLoop::printActiveChannels() const {
   for (auto it = _activeChannels.begin(); it != _activeChannels.end(); it++) {
-    LOG_INFO << "{" << (*it)->reventsToString() << "} ";
+    LOG_INFO
+      << "{ " << (*it)->reventsToString()
+      << "} in loop " << this;
   }
 }

@@ -57,7 +57,7 @@ TcpConnection::TcpConnection(EventLoop* loop,
 }
 
 TcpConnection::~TcpConnection() {
-  LOG_DEBUG
+  LOG_INFO
     << "TcpConnection::dtor[" << _name << "] at " << this
     << " fd=" << _channel->fd()
     << " state=" << stateToString();

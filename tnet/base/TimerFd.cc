@@ -67,6 +67,7 @@ inline int64_t TimerFd::getMsNowAbs() {
 }
 
 inline int TimerFd::writeToPipe() {
+  printf("蛤？\n");
   char buf[9];
   snprintf(buf, 8, "%lld", static_cast<int64_t>(1));
   return ::write(_pipefd[1], buf, sizeof(int64_t));
@@ -79,7 +80,6 @@ void TimerFd::push(int64_t msExpirationAbs) {
 
 void TimerFd::pop() {
   std::lock_guard<std::mutex> lck(_mtx);
-  //printf("call %lld %lld\n", _stamp, getMsNowAbs());
   if (_stamp > 0 && _stamp <= getMsNowAbs()) {
     writeToPipe();
     _stamp = 0;

@@ -5,17 +5,32 @@
 #include <tnet/net/SocketsOps.h>
 #include <tnet/net/TimerId.h>
 #include <functional>
+#include <string>
 
 #include <errno.h>
 
 using namespace tnet;
 using namespace tnet::net;
 
+namespace {
+  void defaultConnectionFailedCallback(std::string&& reason) {
+    if (reason == "fatal") {
+      LOG_SYSERR << "connect failed reason: " << reason;
+    } else {
+      LOG_INFO << "connect failed reason: " << reason;
+    }
+  }
+}
+
+const int Connector::kMaxRetryDelayMs = 30 * 1000;
+const int Connector::kInitRetryDelayMs = 500;
+
 Connector::Connector(EventLoop* loop, const InetAddress& serverAddr)
     : _loop(loop),
       _serverAddress(serverAddr),
       _connect(false),
       _state(kDisconnected),
+      _connectionFailedCallback(defaultConnectionFailedCallback),
       _retryDelayMs(kInitRetryDelayMs) {}
 
 Connector::~Connector() {
@@ -76,12 +91,13 @@ void Connector::connect() {
     case EBADF:
     case EFAULT:
     case ENOTSOCK:
-      LOG_SYSERR
+      LOG_INFO
         << "connect error in Connector::startInLoop: "
         << strerror(saveErrno);
+      _connectionFailedCallback(std::string("fatal"));
       break;
     default:
-      LOG_SYSERR
+      LOG_INFO
         << "Unexpected error in Connector::startInLoop: "
         << strerror(saveErrno);
       sockets::close(sockfd);
@@ -166,5 +182,6 @@ void Connector::retry(int sockfd) {
     _retryDelayMs = std::min(_retryDelayMs * 2, kMaxRetryDelayMs);
   } else {
     LOG_DEBUG << "do not connect";
+    _connectionFailedCallback(std::string("timeout"));
   }
 }

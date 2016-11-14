@@ -28,10 +28,10 @@ int main(int argc, char const *argv[]) {
   TcpServer server(&loop, listenAddr, "EchoSever");
   server.onConnection(handleConn);
   server.onMessage(handleMess);
-  server.setThreadNum(1);
+  server.setThreadNum(0);
   server.start();
-  LOG_INFO << "EchoSever Start";
-  //loop.runEvery(1, []{});
+  LOG_INFO << "EchoSever Start main loop is " << &loop;
+  loop.runEvery(1, []{ printf("hi\n"); });
   loop.loop();
   return 0;
 }

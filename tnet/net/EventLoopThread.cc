@@ -8,7 +8,7 @@ EventLoopThread::EventLoopThread(const ThreadInitCallback& cb,
                                 const std::string& name)
     : _loop(nullptr),
       _exiting(false),
-      _thread([this, &name] { threadFunc(); }, name),
+      _thread([this] { threadFunc(); }, name),
       _mtx(),
       _cond(_mtx),
       _cb(cb) {}

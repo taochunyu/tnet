@@ -41,7 +41,6 @@ void EventLoopThreadPool::start(const ThreadInitCallback& cb) {
 
 EventLoop* EventLoopThreadPool::getNextLoop() {
   _baseLoop->assertInLoopThread();
-  LOG_INFO << _loops.size();
   assert(_started);
   EventLoop* loop = _baseLoop;
   if (!_loops.empty()) {

@@ -14,11 +14,15 @@ class EventLoop;
 class Connector : tnet::nocopyable, public std::enable_shared_from_this<Connector> {
  public:
   using NewConnectionCallback = std::function<void(int sockfd)>;
+  using ConnectionFailedCallback = std::function<void(std::string&&)>;
   Connector(EventLoop* loop, const InetAddress& serverAddr);
   ~Connector();
 
-  void onConnection(const NewConnectionCallback& cb) {
+  void setNewConnectionCallback(const NewConnectionCallback& cb) {
     _newConnectionCallback = cb;
+  }
+  void onFailed(const ConnectionFailedCallback& cb) {
+    _connectionFailedCallback = cb;
   }
 
   void start();
@@ -31,8 +35,8 @@ class Connector : tnet::nocopyable, public std::enable_shared_from_this<Connecto
  private:
   enum State { kDisconnected, kConnecting, kConnected };
 
-  static const int kMaxRetryDelayMs = 30 * 1000;
-  static const int kInitRetryDelayMs = 500;
+  static const int kMaxRetryDelayMs;
+  static const int kInitRetryDelayMs;
 
   void setState(State s) { _state = s; }
   void startInLoop();
@@ -51,6 +55,7 @@ class Connector : tnet::nocopyable, public std::enable_shared_from_this<Connecto
   std::atomic<State> _state;
   std::unique_ptr<Channel> _channel;
   NewConnectionCallback _newConnectionCallback;
+  ConnectionFailedCallback _connectionFailedCallback;
   int _retryDelayMs;
 };
 

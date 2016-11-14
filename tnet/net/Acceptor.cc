@@ -26,13 +26,12 @@ Acceptor::Acceptor(EventLoop* loop,
   _acceptSocket.bindAddress(listenAddr);
   LOG_INFO << "Acceptor ctor";
   _acceptChannel.onReadable([this](Timestamp receiveTime){
-    LOG_INFO << "Acceptor will handle Read";
     handleRead();
   });
 }
 
 Acceptor::~Acceptor() {
-  printf("acc dtor\n");
+  printf("Acceptor dtor\n");
   _acceptChannel.disableAll();
   _acceptChannel.remove();
   ::close(_idleFd);
@@ -49,7 +48,6 @@ void Acceptor::handleRead() {
   _loop->assertInLoopThread();
   InetAddress peerAddr;
   int connfd = _acceptSocket.accept(&peerAddr);
-  printf("accwptor:  %d\n", connfd);
   if (connfd > 0) {
     if (_newConnectionCallback) {
       _newConnectionCallback(connfd, peerAddr);

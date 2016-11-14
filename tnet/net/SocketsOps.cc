@@ -79,7 +79,6 @@ void listenOrDie(int sockfd) {
 }
 
 int accept(int sockfd, struct sockaddr_in6* addr) {
-  LOG_INFO << "accepting";
   socklen_t addrlen = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
   int connfd = ::accept(sockfd, sockaddr_cast(addr), &addrlen);
   if (connfd < 0) {

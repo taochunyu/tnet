@@ -36,7 +36,6 @@ void Channel::handleEvent(Timestamp receiveTime) {
     if (_writeCallback) _writeCallback();
   }
   if ((_revents & POLLHUP) && !(_revents & POLLIN)) {
-    printf("close call\n");
     if (_closeCallback) _closeCallback();
   }
 }
