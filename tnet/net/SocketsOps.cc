@@ -111,7 +111,7 @@ int accept(int sockfd, struct sockaddr_in6* addr) {
 }
 
 int connect(int sockfd, const struct sockaddr* addr) {
-  return ::connect(sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+  return ::connect(sockfd, addr, addr->sa_len);
 }
 
 ssize_t read(int sockfd, void* buf, size_t count) {
@@ -161,6 +161,7 @@ void toIp(char* buf, size_t size, const struct sockaddr* addr) {
 }
 
 void fromIpPort(const char* ip, uint16_t port, struct sockaddr_in* addr) {
+  addr->sin_len = 16;
   addr->sin_family = AF_INET;
   addr->sin_port = hostToNetwork16(port);
   if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
@@ -169,12 +170,14 @@ void fromIpPort(const char* ip, uint16_t port, struct sockaddr_in* addr) {
 }
 
 void fromIpPort(const char* ip, uint16_t port, struct sockaddr_in6* addr) {
+  addr->sin6_len = 28;
   addr->sin6_family = AF_INET6;
   addr->sin6_port = hostToNetwork16(port);
   if (::inet_pton(AF_INET6, ip, &addr->sin6_addr) <= 0) {
     LOG_SYSERR << "sockets::fromIpPort";
   }
 }
+
 
 int getSockError(int sockfd) {
   int optval;

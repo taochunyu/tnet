@@ -14,6 +14,7 @@ class Timer;
 
 class TimerId : tnet::copyable {
  public:
+  TimerId() {}
   TimerId(std::weak_ptr<Timer> timer, int64_t seq)
       : _timer(timer),
         _sequence(seq) {}

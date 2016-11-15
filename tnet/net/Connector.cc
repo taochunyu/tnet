@@ -12,16 +12,6 @@
 using namespace tnet;
 using namespace tnet::net;
 
-namespace {
-  void defaultConnectionFailedCallback(std::string&& reason) {
-    if (reason == "fatal") {
-      LOG_SYSERR << "connect failed reason: " << reason;
-    } else {
-      LOG_INFO << "connect failed reason: " << reason;
-    }
-  }
-}
-
 const int Connector::kMaxRetryDelayMs = 30 * 1000;
 const int Connector::kInitRetryDelayMs = 500;
 
@@ -30,7 +20,6 @@ Connector::Connector(EventLoop* loop, const InetAddress& serverAddr)
       _serverAddress(serverAddr),
       _connect(false),
       _state(kDisconnected),
-      _connectionFailedCallback(defaultConnectionFailedCallback),
       _retryDelayMs(kInitRetryDelayMs) {}
 
 Connector::~Connector() {
@@ -69,8 +58,8 @@ void Connector::stopInLoop() {
 void Connector::connect() {
   int sockfd = sockets::createNonblockingOrDie(_serverAddress.family());
   int ret = sockets::connect(sockfd, _serverAddress.getSockAddr());
-  int saveErrno = ret;
-  switch (saveErrno) {
+  int savedErrno = (ret == 0) ? 0 : errno;
+  switch (savedErrno) {
     case 0:
     case EINPROGRESS:
     case EINTR:
@@ -93,14 +82,14 @@ void Connector::connect() {
     case ENOTSOCK:
       LOG_INFO
         << "connect error in Connector::startInLoop: "
-        << strerror(saveErrno);
-      _connectionFailedCallback(std::string("fatal"));
+        << strerror(savedErrno);
       break;
     default:
       LOG_INFO
         << "Unexpected error in Connector::startInLoop: "
-        << strerror(saveErrno);
+        << strerror(savedErrno);
       sockets::close(sockfd);
+      _connectionErrorCallback(savedErrno);
       break;
   }
 }
@@ -139,7 +128,8 @@ void Connector::handleWrite() {
   LOG_TRACE << "Connector::handleWrite " << _state;
   if (_state == kConnecting) {
     int sockfd = removeAndResetChannel();
-    int err = sockets::getSockError(sockfd);
+    char buf[4];
+    int err = sockets::read(sockfd, buf, 0);
     if (err) {
       LOG_WARN
         << "Connector::handleWrite - SO_ERROR = " << err
@@ -182,6 +172,6 @@ void Connector::retry(int sockfd) {
     _retryDelayMs = std::min(_retryDelayMs * 2, kMaxRetryDelayMs);
   } else {
     LOG_DEBUG << "do not connect";
-    _connectionFailedCallback(std::string("timeout"));
+    _timeoutCallback();
   }
 }

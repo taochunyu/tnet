@@ -236,6 +236,7 @@ void TcpConnection::establishConnection() {
   setState(kConnected);
   _channel->tie(shared_from_this());
   _channel->enableReading();
+  _createTime = Timestamp::now();
   _connectionCallback(shared_from_this());
 }
 
@@ -246,6 +247,8 @@ void TcpConnection::destoryConnection() {
     _channel->disableAll();
   }
   _channel->remove();
+  assert(_state == kDisconnected);
+  _connectionCallback(shared_from_this());
 }
 
 void TcpConnection::handleRead(Timestamp receiveTime) {
@@ -253,6 +256,8 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
   int saveErrno = 0;
   ssize_t n = _inputBuffer.readFdIntoBuffer(_channel->fd(), &saveErrno);
   if (n > 0) {
+    _lastReceiveTime = Timestamp::now();
+    _bytesRecevied += n;
     _messageCallback(shared_from_this(), &_inputBuffer, receiveTime);
   } else if (n == 0) {
     handleClose();
@@ -266,10 +271,12 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
 void TcpConnection::handleWrite() {
   _loop->assertInLoopThread();
   if (_channel->isWriting()) {
+
     ssize_t n = sockets::write(_channel->fd(),
                                _outputBuffer.peek(),
                                _outputBuffer.readableBytes());
     if (n > 0) {
+      _bytesSent += n;
       _outputBuffer.retrieve(n);
       if (_outputBuffer.readableBytes() == 0) {
         _channel->disableWriting();

@@ -1,6 +1,7 @@
 #ifndef TNET_NET_TCPCONNECTION_H
 #define TNET_NET_TCPCONNECTION_H
 
+#include <tnet/base/any.h>
 #include <tnet/base/nocopyable.h>
 #include <tnet/base/StringPiece.h>
 #include <tnet/base/Timestamp.h>
@@ -21,8 +22,7 @@ class Socket;
 
 class TcpConnection : tnet::nocopyable, public std::enable_shared_from_this<TcpConnection> {
  public:
-  /// Constructs a TcpConnection with a connected sockfd
-  /// User should not create this object.
+  // User should not create this object.
   TcpConnection(EventLoop* loop,
                 const std::string& name,
                 int sockfd,
@@ -60,10 +60,9 @@ class TcpConnection : tnet::nocopyable, public std::enable_shared_from_this<TcpC
     return &_outputBuffer;
   }
 
-  // c++ 17
-  // void setContext(const std::any& context) { _context = context; }
-  // void std::any getContext() const { return _context; }
-  // void std::any* getMutableContext() { return &_context; }
+  void ctx(const tnet::any& context) { _context = context; }
+  const tnet::any& ctx() const { return _context; }
+  tnet::any* ctxptr() { return &_context; }
 
   void onConnected(const ConnectionCallback& cb) {
     _connectionCallback = cb;
@@ -118,11 +117,12 @@ class TcpConnection : tnet::nocopyable, public std::enable_shared_from_this<TcpC
   size_t _highWaterMark;
   Buffer _inputBuffer;
   Buffer _outputBuffer;
+  tnet::any _context;
   bool _reading;
-  // Timestamp _createTime;
-  // Timestamp _lastReceiveTime;
-  // size_t _bytesRecevied;
-  // size_t _bytesSent;
+  Timestamp _createTime;
+  Timestamp _lastReceiveTime;
+  size_t _bytesRecevied;
+  size_t _bytesSent;
 };
 
 }  // namespace net

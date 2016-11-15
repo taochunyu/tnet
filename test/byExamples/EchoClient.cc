@@ -7,17 +7,25 @@
 using namespace tnet;
 using namespace tnet::net;
 
+auto handleConn = [](auto conn) {
+  if (conn->connected()) {
+    conn->send(" world");
+  }
+};
+
+auto handleMess = [](auto conn, auto buf, auto time) {
+  std::string msg(buf->retrieveAllAsString());
+  LOG_INFO << conn->name() << " recv " << msg << " bytes at " << time.toString();
+  conn->send(msg);
+};
+
 int main(int argc, char const *argv[]) {
   EventLoop loop;
   InetAddress server("127.0.0.1", 8080);
   TcpClient client(&loop, server, "TcpClient");
-  loop.runAfter(0.0, [&client]{
-    LOG_INFO << "timeout";
-    client.stop();
-  });
-  loop.runAfter(1.0, [&loop]{ loop.quit(); });
+  client.onConnection(handleConn);
+  client.onMessage(handleMess);
   client.connect();
-  CurrentThread::sleepUsec(100 * 1000);
   loop.loop();
   return 0;
 }

@@ -102,7 +102,6 @@ TimerQueue::TimerVector TimerQueue::getExpired(const Timestamp now) {
 
 void TimerQueue::reset(const TimerVector& expired, Timestamp now) {
   Timestamp nextExpire;
-  printf("啦啦啦%d\n", (int)expired.size());
   for (auto it = expired.begin(); it != expired.end(); ++it) {
     bool notCannelingTimer =
       _cancelingTimers.find(*it) == _cancelingTimers.end();
