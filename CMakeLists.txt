@@ -19,4 +19,4 @@ if(NOT CMAKE_BUILD_NO_TEST)
   add_subdirectory(test)
 endif(NOT CMAKE_BUILD_NO_TEST)
 
-# add_subdirectory(example example)
+add_subdirectory(examples)
