@@ -40,14 +40,13 @@ class Codec : tnet::nocopyable {
   void send(const TcpConnectionPtr& conn, const std::string method, const std::string message);
  private:
   const static size_t kHeaderLen = sizeof(int32_t);
-  const static size_t kHeaderNameLen = sizeof(int32_t);
   DecodedMessageCallback _cb;
 };
 
 void Codec::onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp receiveTime) {
   while (buf->readableBytes() >= kHeaderLen) {
     // len
-    const int32_t len = sockets::networkToHost32(buf->peekInt32());
+    const int32_t len = buf->peekInt32();
     if (len > 65535 || len < 0) {
       LOG_ERROR << "Invalid length " << len;
       conn->shutdown();
@@ -55,14 +54,15 @@ void Codec::onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp recei
     } else if (buf->readableBytes() >= len + kHeaderLen) {
       buf->retrieve(kHeaderLen);
       // nameLen
-      const int32_t nameLen = sockets::networkToHost32(buf->peekInt32());
+      const int32_t nameLen = buf->peekInt32();
       if (nameLen > 65535 || nameLen < 0) {
         LOG_ERROR << "Invalid length " << nameLen;
         conn->shutdown();
         break;
       }
+      buf->retrieve(kHeaderLen);
       std::string method(buf->peek(), nameLen);
-      std::string message(buf->peek() + sizeof(int32_t), len - nameLen);
+      std::string message(buf->peek() + nameLen, len - nameLen);
       _cb(conn, method, message, receiveTime);
       buf->retrieve(len);
     } else {

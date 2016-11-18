@@ -94,8 +94,8 @@ void TcpConnection::send(Buffer* buf) {
     if (_loop->isInLoopThread()) {
       sendInLoop(buf->peek(), buf->readableBytes());
     } else {
-      _loop->runInLoop([this, buf]{
-        sendInLoop(buf->peek(), buf->readableBytes());
+      _loop->runInLoop([this, str = buf->retrieveAllAsString()]{
+        sendInLoop(str);
       });
     }
   }

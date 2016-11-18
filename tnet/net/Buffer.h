@@ -244,7 +244,7 @@ class Buffer : public tnet::copyable {
   }
 
   void prepend(const void* data, size_t len) {
-    assert(len < prependableBytes());
+    assert(len <= prependableBytes());
     _readerIndex -= len;
     const char* t = static_cast<const char*>(data);
     std::copy(t, t + len, begin() + _readerIndex);

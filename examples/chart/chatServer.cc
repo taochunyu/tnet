@@ -7,16 +7,15 @@
 #include <tnet/net/TcpConnection.h>
 #include <tnet/net/TimerId.h>
 #include <tnet/net/Codec.h>
-#include <tnet/net/Dispather.h>
 #include <set>
 #include <stdio.h>
 
 using namespace tnet;
 using namespace tnet::net;
 
-class ChartServer : tnet::nocopyable {
+class ChatServer : tnet::nocopyable {
  public:
-  ChartServer(EventLoop* loop, const InetAddress& listenAddr);
+  ChatServer(EventLoop* loop, const InetAddress& listenAddr);
   void start() { _server.start(); }
  private:
   void handleConn(const TcpConnectionPtr& conn);
@@ -30,9 +29,9 @@ class ChartServer : tnet::nocopyable {
   std::set<TcpConnectionPtr> _connList;
 };
 
-ChartServer::ChartServer(EventLoop* loop, const InetAddress& listenAddr)
+ChatServer::ChatServer(EventLoop* loop, const InetAddress& listenAddr)
     : _loop(loop),
-      _server(loop, listenAddr, "ChartServer"),
+      _server(_loop, listenAddr, "ChatServer"),
       _codec([this](auto a, auto b, auto c, auto d){ handleMess(a, b, c, d); }) {
   _server.onConnection([this](auto conn) {
     handleConn(conn);
@@ -40,10 +39,9 @@ ChartServer::ChartServer(EventLoop* loop, const InetAddress& listenAddr)
   _server.onMessage([this](auto conn, auto buf, auto receiveTime) {
     _codec.onMessage(conn, buf, receiveTime);
   });
-  (void)_loop;
 }
 
-void ChartServer::handleConn(const TcpConnectionPtr& conn) {
+void ChatServer::handleConn(const TcpConnectionPtr& conn) {
   LOG_INFO
     << conn->peerAddress().toIpPort() << " -> "
     << conn->localAddress().toIpPort() << " is "
@@ -56,19 +54,19 @@ void ChartServer::handleConn(const TcpConnectionPtr& conn) {
   }
 }
 
-void ChartServer::handleMess(const TcpConnectionPtr& conn,
+void ChatServer::handleMess(const TcpConnectionPtr& conn,
                 std::string method,
                 std::string message,
                 Timestamp receiveTime) {
   for (auto it = _connList.begin(); it != _connList.end(); it++) {
-    _codec.send(*it, "broadcast", message);
+    _codec.send(*it, method, message);
   }
 }
 
 int main(int argc, char const *argv[]) {
   EventLoop loop;
   InetAddress serverAddr(8080);
-  ChartServer server(&loop, serverAddr);
+  ChatServer server(&loop, serverAddr);
   server.start();
   loop.loop();
   return 0;
