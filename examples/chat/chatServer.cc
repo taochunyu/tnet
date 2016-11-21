@@ -7,6 +7,7 @@
 #include <tnet/net/TcpConnection.h>
 #include <tnet/net/TimerId.h>
 #include <tnet/net/Codec.h>
+#include <tnet/base/Mutex.h>
 #include <set>
 #include <stdio.h>
 
@@ -27,6 +28,7 @@ class ChatServer : tnet::nocopyable {
   TcpServer _server;
   Codec _codec;
   std::set<TcpConnectionPtr> _connList;
+  MutexLock _mtx;
 };
 
 ChatServer::ChatServer(EventLoop* loop, const InetAddress& listenAddr)
@@ -47,9 +49,11 @@ void ChatServer::handleConn(const TcpConnectionPtr& conn) {
     << conn->localAddress().toIpPort() << " is "
     << (conn->connected() ? "UP" : "DOWN");
   if (conn->connected()) {
+    MutexLockGuard lck(_mtx);
     _connList.insert(conn);
   }
   if (conn->disconnected()) {
+    MutexLockGuard lck(_mtx);
     _connList.erase(conn);
   }
 }
@@ -58,6 +62,7 @@ void ChatServer::handleMess(const TcpConnectionPtr& conn,
                 std::string method,
                 std::string message,
                 Timestamp receiveTime) {
+  MutexLockGuard lck(_mtx);
   for (auto it = _connList.begin(); it != _connList.end(); it++) {
     _codec.send(*it, method, message);
   }

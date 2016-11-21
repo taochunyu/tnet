@@ -18,7 +18,6 @@ class TcpConnection;
 
 class TcpServer : tnet::nocopyable {
  public:
-  using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
   using ThreadInitCallback = std::function<void(EventLoop*)>;
   enum Option { kNoReusePort, kReusePort };
 
