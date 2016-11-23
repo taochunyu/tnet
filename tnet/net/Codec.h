@@ -37,7 +37,6 @@ class Codec : tnet::nocopyable {
   explicit Codec(DecodedMessageCallback&& cb) : _cb(std::move(cb)) {}
 
   void onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp receiveTime) {
-    printf("啦啦啦\n");
     while (buf->readableBytes() >= kHeaderLen) {
       // len
       const int32_t len = buf->peekInt32();
@@ -57,7 +56,6 @@ class Codec : tnet::nocopyable {
         buf->retrieve(kHeaderLen);
         std::string method(buf->peek(), nameLen);
         std::string message(buf->peek() + nameLen, len - nameLen);
-        printf("哈哈\n");
         _cb(conn, method, message, receiveTime);
         buf->retrieve(len);
       } else {

@@ -41,7 +41,6 @@
 #include <tnet/net/TimerQueue.h>
 
 
-class FileModel {};
 
 using namespace tnet;
 using namespace tnet::net;
