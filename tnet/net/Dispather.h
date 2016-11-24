@@ -62,11 +62,7 @@ class Dispather : tnet::nocopyable {
       for (auto it = _useList.begin(); it != _useList.end(); it++) {
         (*it)(ctx);
       }
-      printf("llll\n");
-      printf("%s\n", method.c_str());
       if (_routeList.find(method) != _routeList.end()) {
-        printf("rrrrr\n");
-
         _routeList[method](ctx);
       }
     };

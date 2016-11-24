@@ -1,10 +1,11 @@
 #include "MessageServer.h"
 
 int main(int argc, char const *argv[]) {
-  FileModel fm;
+  FileModelServer fms;
+  fms.readConfigFile();
   EventLoop loop;
   InetAddress messListenAddr(8080);
-  MessageServer messServer(&loop, messListenAddr, fm);
+  MessageServer messServer(&loop, messListenAddr, fms);
   messServer.start();
   loop.loop();
   return 0;

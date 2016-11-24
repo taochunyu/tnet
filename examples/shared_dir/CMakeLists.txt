@@ -1,10 +1,12 @@
 set(server_SRC
   Server.cc
+  FileModel.cc
   MessageServer.cc
 )
 
 set(client_SRC
   Client.cc
+  FileModel.cc
   MessageClient.cc
 )
 

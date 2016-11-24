@@ -12,14 +12,38 @@ class FileModel : tnet::nocopyable {
   using CmpReturn = std::pair<FileNameList, FileNameList>;
 
   FileModel(const std::string path = "/tmp/fileSync");
+  virtual void readConfigFile() = 0;
 
   static FileMap scanfPath(const std::string& path);
   static std::string fileMapToString(const FileMap&);
   static FileMap stringToFileMap(const std::string& str);
-  static CmpReturn FileMapCmper(const FileMap&, const FileMap&);
- private:
+  static CmpReturn fileMapCmper(const FileMap&, const FileMap&);
+ protected:
   int _workDirFd;
   int _tempDirFd;
+  std::string _workDirPath;
+};
+
+class FileModelServer : public FileModel {
+  friend class MessageServer;
+  friend class FileServer;
+ public:
+  FileModelServer() : FileModel("/tmp/fileSyncServer") {}
+  virtual void readConfigFile();
+ private:
+  std::map<std::string, std::string> _usersList;
+  std::string                        _sharedDirPath = "/Users/taochunyu/Desktop/server";
+};
+
+class FileModelClient : public FileModel {
+  friend class MessageClient;
+ public:
+  FileModelClient() : FileModel() {}
+  virtual void readConfigFile();
+ private:
+  std::string _sharedDirPath;
+  std::string _username;
+  std::string _password;
 };
 
 #endif  // FILEMODEL_H

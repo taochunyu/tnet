@@ -2,15 +2,16 @@
 #define MESSAGECLIENT_H
 
 #include "tnet.h"
-
-class FileModel;
+#include "FileModel.h"
 class MessageClient : tnet::nocopyable {
  public:
-  MessageClient(EventLoop* loop, InetAddress serverAddr, FileModel& fm);
+  MessageClient(EventLoop* loop, InetAddress serverAddr, FileModelClient& fmc);
   void connect() { _client.connect(); }
   void send(std::string method, std::string message);
  private:
   void handleConn(const TcpConnectionPtr& conn);
+  void login(const std::string& username, const std::string& password);
+  void login(Ctx ctx);
   void logup(Ctx ctx);
 
   EventLoop*       _loop;
@@ -21,7 +22,7 @@ class MessageClient : tnet::nocopyable {
   std::string      _username;
   std::string      _password;
   MutexLock        _mtx;
-  FileModel&       _fm;
+  FileModelClient&       _fmc;
 };
 
 #endif  // MESSAGECLIENT_H

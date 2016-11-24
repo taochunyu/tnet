@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sstream>
+#include <fstream>
+#include <iostream>
+#include <cassert>
 
 namespace {
 
@@ -32,6 +35,7 @@ int creatDirAndReturnFdAt(int fd, const char* path) {
 }
 
 FileModel::FileModel(const std::string path) {
+  _workDirPath = path;
   _workDirFd = creatDirAndReturnFd(path.c_str());
   _tempDirFd = creatDirAndReturnFdAt(_workDirFd, "temp");
 }
@@ -51,12 +55,11 @@ FileModel::FileMap FileModel::scanfPath(const std::string& path) {
     if (ret == -1) {
       LOG_ERROR << "FileModel::scanfPath - fstat: " << errno;
     }
-    if (S_ISDIR(temp.st_mode)) {
-      LOG_ERROR << "dir " << dp->d_name << " in shared dir";
+    if (S_ISREG(temp.st_mode) && std::string(dp->d_name) != ".DS_Store") {
+      char buf[64];
+      sprintf(buf, "%lu", temp.st_mtime);
+      result.emplace(dp->d_name, std::string(buf));
     }
-    char buf[64];
-    sprintf(buf, "%lu", temp.st_mtime);
-    result.emplace(dp->d_name, std::string(buf));
   }
   return result;
 }
@@ -80,7 +83,7 @@ FileModel::FileMap FileModel::stringToFileMap(const std::string& str) {
   return result;
 }
 
-FileModel::CmpReturn FileModel::FileMapCmper(const FileMap& client, const FileMap& server) {
+FileModel::CmpReturn FileModel::fileMapCmper(const FileMap& client, const FileMap& server) {
   FileNameList loadToClient, loadToServer;
   for (auto& it : server) {
     auto i = client.find(it.first);
@@ -95,4 +98,43 @@ FileModel::CmpReturn FileModel::FileMapCmper(const FileMap& client, const FileMa
     }
   }
   return CmpReturn(loadToClient, loadToServer);
+}
+
+void FileModelServer::readConfigFile() {
+  std::ifstream file;
+  file.open(_workDirPath + "/config");
+  if (file.bad()) {
+    LOG_ERROR << "open config failed";
+  }
+  std::string name, password;
+  while (file >> name) {
+    file >> password;
+    _usersList.emplace(name, password);
+  }
+  file.close();
+}
+
+void FileModelClient::readConfigFile() {
+  std::ifstream file;
+  file.open(_workDirPath + "/config");
+  if (!file.good()) {
+    LOG_ERROR << "open config failed, run fileSyncConfig first";
+  }
+  std::string temp;
+  if (file >> temp) {
+    _sharedDirPath = temp;
+  } else {
+    LOG_ERROR << "cannot find shared dir path, run fileSyncConfig first";
+  }
+  if (file >> temp) {
+    _username = temp;
+  } else {
+    LOG_ERROR << "cannot find username, run fileSyncConfig first";
+  }
+  if (file >> temp) {
+    _password = temp;
+  } else {
+    LOG_ERROR << "cannot find password, run fileSyncConfig first";
+  }
+  file.close();
 }
