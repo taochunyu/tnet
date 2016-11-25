@@ -32,6 +32,12 @@ int creatDirAndReturnFdAt(int fd, const char* path) {
   }
 }
 
+std::string getName(const std::string& seed) {
+  std::ostringstream os;
+  os << seed << Timestamp::now().toFormattedString();
+  return os.str();
+}
+
 }
 
 FileModel::FileModel(const std::string path) {
@@ -98,6 +104,15 @@ FileModel::CmpReturn FileModel::fileMapCmper(const FileMap& client, const FileMa
     }
   }
   return CmpReturn(loadToClient, loadToServer);
+}
+
+std::string FileModel::getUniqueName(const std::string &seed, std::string& path) {
+  auto files = scanfPath(path);
+  auto name = getName(seed);
+  while (files.find(name) != files.end()) {
+    auto name = getName(seed);
+  }
+  return name;
 }
 
 void FileModelServer::readConfigFile() {

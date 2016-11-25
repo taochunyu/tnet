@@ -9,10 +9,12 @@ class MessageClient : tnet::nocopyable {
   void connect() { _client.connect(); }
   void send(std::string method, std::string message);
  private:
-  void handleConn(const TcpConnectionPtr& conn);
   void login(const std::string& username, const std::string& password);
+
+  void handleConn(const TcpConnectionPtr& conn);
   void login(Ctx ctx);
   void logup(Ctx ctx);
+  void prepare(Ctx ctx);
 
   EventLoop*       _loop;
   TcpClient        _client;

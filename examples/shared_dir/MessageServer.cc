@@ -1,15 +1,7 @@
 #include "MessageServer.h"
 #include <sstream>
 
-namespace {
 
-std::string getUniqueName(const std::string& seed) {
-  std::ostringstream os;
-  os << seed << Timestamp::now().toFormattedString();
-  return os.str();
-}
-
-}
 
 MessageServer::MessageServer(EventLoop* loop, InetAddress listenAddr, FileModelServer& fms)
     : _loop(loop),

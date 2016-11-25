@@ -13,11 +13,13 @@ class FileModel : tnet::nocopyable {
 
   FileModel(const std::string path = "/tmp/fileSync");
   virtual void readConfigFile() = 0;
+  virtual std::string creatTempFile() = 0;
 
   static FileMap scanfPath(const std::string& path);
   static std::string fileMapToString(const FileMap&);
   static FileMap stringToFileMap(const std::string& str);
   static CmpReturn fileMapCmper(const FileMap&, const FileMap&);
+  static std::string getUniqueName(const std::string& seed, std::string& path);
  protected:
   int _workDirFd;
   int _tempDirFd;
@@ -30,6 +32,7 @@ class FileModelServer : public FileModel {
  public:
   FileModelServer() : FileModel("/tmp/fileSyncServer") {}
   virtual void readConfigFile();
+  virtual std::string creatTempFile();
  private:
   std::map<std::string, std::string> _usersList;
   std::string                        _sharedDirPath = "/Users/taochunyu/Desktop/server";
@@ -40,6 +43,7 @@ class FileModelClient : public FileModel {
  public:
   FileModelClient() : FileModel() {}
   virtual void readConfigFile();
+  virtual std::string creatTempFile();
  private:
   std::string _sharedDirPath;
   std::string _username;
