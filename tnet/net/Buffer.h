@@ -24,7 +24,7 @@ namespace net {
 /// 0      <=      readerIndex   <=   writerIndex    <=     size
 /// @endcode
 
-class Buffer : public tnet::copyable {
+class Buffer {
  public:
 
   explicit Buffer(size_t initialSize = kInitialSize)

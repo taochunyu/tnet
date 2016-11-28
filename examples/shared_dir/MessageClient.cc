@@ -1,11 +1,13 @@
 #include "MessageClient.h"
+#include <sstream>
 
-MessageClient::MessageClient(EventLoop* loop, InetAddress listenAddr, FileModelClient& fmc)
+MessageClient::MessageClient(EventLoop* loop, InetAddress listenAddr, FileModelClient& fmc, FileClient& fc)
     : _loop(loop),
       _client(_loop, listenAddr, "MessageClient"),
       _dispather("MessageDispather"),
       _codec(_dispather.watcher()),
-      _fmc(fmc)
+      _fmc(fmc),
+      _fc(fc)
 {
   _client.onConnection([this](auto conn){ handleConn(conn); });
   _client.onMessage([this](auto conn, auto buf, auto receiveTime) {
@@ -57,4 +59,33 @@ void MessageClient::login(Ctx ctx) {
   auto files = FileModel::scanfPath(_fmc._sharedDirPath);
   auto filesString = FileModel::fileMapToString(files);
   send("/check", filesString);
+}
+
+void MessageClient::jobs(Ctx ctx) {
+  std::istringstream is(ctx.message);
+  std::string from, to;
+  std::string toServer("loadToServer");
+  std::string toClient("loadToClient");
+  while (is >> from) {
+    if (from == "####") break;
+    is >> to;
+    to = _fmc.creatTempFileForReceive(to);
+    newJob({ toClient, from, to});
+  }
+  while (is >> from) {
+    is >> to;
+    from = _fmc.creatTempFileForSend(from, from);
+    newJob({ toServer, from, to});
+  }
+  doJobs();
+}
+
+void MessageClient::doJobs() {
+  if (_jobs.size() == 0) {
+    printf("nothing to do\n");
+  }
+  while (_jobs.size() != 0) {
+    _fc.doJob(_jobs.back());
+    _jobs.pop_back();
+  }
 }

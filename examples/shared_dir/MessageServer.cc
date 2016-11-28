@@ -52,13 +52,22 @@ void MessageServer::check(Ctx ctx) {
   auto clientFiles = FileModel::stringToFileMap(ctx.message);
   auto serverFiles = FileModel::scanfPath(_fms._sharedDirPath);
   auto ret = FileModel::fileMapCmper(clientFiles, serverFiles);
+  std::string ipPortStr = ctx.conn->peerAddress().toIpPort();
+  std::ostringstream os;
   printf("load to client: ");
   for (auto it : ret.first) {
     printf("%s ", it.c_str());
+    std::string ret = _fms.creatTempFileForSend(ipPortStr, it);
+    os << ret << "\n" << it << "\n";
   }
+  os << "####" << "\n";
   printf("\nload to server: ");
+
   for (auto it : ret.second) {
     printf("%s ", it.c_str());
+    std::string ret = _fms.creatTempFileForReceive(ipPortStr);
+    os << it << "\n" << ret << "\n";
   }
   printf("\n");
+  send(ctx.conn, "/jobs", os.str());
 }

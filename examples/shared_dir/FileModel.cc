@@ -46,6 +46,25 @@ FileModel::FileModel(const std::string path) {
   _tempDirFd = creatDirAndReturnFdAt(_workDirFd, "temp");
 }
 
+std::string FileModel::creatTempFileForReceive(const std::string& seed) {
+  auto name = getUniqueName(seed, _tempDirFd);
+  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT, 0700);
+  if (ret == -1) {
+    LOG_ERROR << "FileModel::creatTempFileForReceive";
+  }
+  close(ret);
+  return name;
+}
+
+std::string FileModel::creatTempFileForSend(const std::string& seed, const std::string& fileName) {
+  auto name = getUniqueName(seed, _tempDirFd);
+  int ret = linkat(_workDirFd, fileName.c_str(), _tempDirFd, name.c_str(), 0);
+  if (ret == -1) {
+    LOG_ERROR << "FileModel::creatTempFileForSend";
+  }
+  return name;
+}
+
 FileModel::FileMap FileModel::scanfPath(const std::string& path) {
   FileMap result;
   DIR* dirPtr = opendir(path.c_str());
@@ -53,6 +72,29 @@ FileModel::FileMap FileModel::scanfPath(const std::string& path) {
   struct dirent *dp;
   if (dirPtr == nullptr) {
     LOG_ERROR << "FileModel::scanfPath - no accessed dir: " << path;
+  }
+  while ((dp = readdir(dirPtr)) != nullptr) {
+    int fd = openat(dirFd, dp->d_name, O_RDONLY, 0700);
+    struct stat temp;
+    int ret = fstat(fd, &temp);
+    if (ret == -1) {
+      LOG_ERROR << "FileModel::scanfPath - fstat: " << errno;
+    }
+    if (S_ISREG(temp.st_mode) && std::string(dp->d_name) != ".DS_Store") {
+      char buf[64];
+      sprintf(buf, "%lu", temp.st_mtime);
+      result.emplace(dp->d_name, std::string(buf));
+    }
+  }
+  return result;
+}
+
+FileModel::FileMap FileModel::scanfPath(const int dirFd) {
+  FileMap result;
+  DIR* dirPtr = fdopendir(dirFd);
+  struct dirent *dp;
+  if (dirPtr == nullptr) {
+    LOG_ERROR << "FileModel::scanfPath - no accessed dir: " << dirFd;
   }
   while ((dp = readdir(dirPtr)) != nullptr) {
     int fd = openat(dirFd, dp->d_name, O_RDONLY, 0700);
@@ -106,8 +148,8 @@ FileModel::CmpReturn FileModel::fileMapCmper(const FileMap& client, const FileMa
   return CmpReturn(loadToClient, loadToServer);
 }
 
-std::string FileModel::getUniqueName(const std::string &seed, std::string& path) {
-  auto files = scanfPath(path);
+std::string FileModel::getUniqueName(const std::string &seed, int dirFd) {
+  auto files = scanfPath(dirFd);
   auto name = getName(seed);
   while (files.find(name) != files.end()) {
     auto name = getName(seed);

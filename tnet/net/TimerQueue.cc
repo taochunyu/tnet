@@ -73,7 +73,6 @@ void TimerQueue::cancelInLoop(const std::shared_ptr<Timer>& timer) {
   if (n == 0 && _callingExpiredTimers) {
     _cancelingTimers.insert(timer);
   }
-  assert(n == 1);
 }
 
 void TimerQueue::handleRead() {
