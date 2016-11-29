@@ -102,20 +102,6 @@ void TcpConnection::send(Buffer* buf) {
   }
 }
 
-void TcpConnection::sendFile(int&& fd, Callback done) {
-  if (_state == kConnected) {
-    lseek(fd, 0, SEEK_SET);
-    auto fb = std::make_shared<Buffer>();
-    if (_loop->isInLoopThread()) {
-      sendFileInLoop(fd, fb, std::move(done));
-    } else {
-      _loop->runInLoop([this, fd, &fb, cb = std::move(done)]() mutable {
-        sendFileInLoop(fd, fb, std::move(cb));
-      });
-    }
-  }
-}
-
 void TcpConnection::sendInLoop(const StringPiece& message) {
   sendInLoop(message.data(), message.size());
 }
@@ -165,15 +151,6 @@ void TcpConnection::sendInLoop(const void* data, size_t len) {
       _channel->enableWriting();
     }
   }
-}
-
-void TcpConnection::sendFileInLoop(int fd, std::shared_ptr<Buffer>& fbuf, Callback&& done) {
-  _loop->assertInLoopThread();
-  if (_state == kDisconnected) {
-    LOG_WARN << "disconnected, give up writing";
-    return;
-  }
-
 }
 
 void TcpConnection::shutdown() {

@@ -1,2 +1,2 @@
 add_subdirectory(chat)
-add_subdirectory(shared_dir)
+add_subdirectory(ftp)

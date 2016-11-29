@@ -11,6 +11,9 @@ class FileServer : tnet::nocopyable {
   FileServer(EventLoop* loop, InetAddress listenAddr, FileModelServer fms);
   void newJob(Job job, Callback cb);
  private:
+  void handleConn(const TcpConnectionPtr&);
+  void onWriteCompleted(const TcpConnectionPtr&);
+  void onReceiveData(const TcpConnectionPtr&, Buffer*, Timestamp);
   EventLoop* loop;
   TcpServer  _server;
   FileModelServer _fms;

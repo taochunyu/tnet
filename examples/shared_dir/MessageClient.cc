@@ -45,6 +45,9 @@ void MessageClient::handleConn(const TcpConnectionPtr& conn) {
 
 void MessageClient::logup(Ctx ctx) {
   printf("logup %s\n", ctx.message.c_str());
+  auto files = FileModel::scanfPath(_fmc._sharedDirPath);
+  auto filesString = FileModel::fileMapToString(files);
+  send("/check", filesString);    
 }
 
 void MessageClient::login(const std::string& username, const std::string& password) {
