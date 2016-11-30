@@ -18,7 +18,7 @@ class MessageServer : tnet::nocopyable {
   void login(Ctx ctx);
   void check(Ctx ctx);
   void newTask(Ctx ctx);
-  void finish(Ctx ctx);
+  void finishcts(Ctx ctx);
 
   EventLoop*        _loop;
   TcpServer         _server;

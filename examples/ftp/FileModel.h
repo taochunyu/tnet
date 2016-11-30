@@ -15,7 +15,7 @@ class FileModel : tnet::nocopyable {
   FileModel(const std::string path = "/tmp/fileSync");
   virtual void readConfigFile() = 0;
   std::string createTempFileForReceive(const std::string& seed);
-  std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
+  virtual std::string createTempFileForSend(const std::string& seed, const std::string& fileName) = 0;
   virtual void lockLink(const std::string& from, const std::string& to) = 0;
 
   static FileMap scanfPath(const std::string& path);
@@ -40,6 +40,7 @@ class FileModelServer : public FileModel {
   }
   virtual void readConfigFile();
   virtual void lockLink(const std::string& from, const std::string& to);
+  std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
  private:
   std::map<std::string, std::string> _usersList;
   std::string                        _sharedDirPath = "/Users/taochunyu/Desktop/server";
@@ -50,11 +51,10 @@ class FileModelClient : public FileModel {
   friend class MessageClient;
   friend class FileClient;
  public:
-  FileModelClient() : FileModel() {
-    _sharedFd = open(_sharedDirPath.c_str(), O_RDONLY, 0700);
-  }
+  FileModelClient() : FileModel() {}
   virtual void readConfigFile();
   virtual void lockLink(const std::string& from, const std::string& to);
+  std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
  private:
   std::string _sharedDirPath;
   int         _sharedFd;

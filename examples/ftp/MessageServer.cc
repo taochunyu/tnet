@@ -16,6 +16,7 @@ MessageServer::MessageServer(EventLoop* loop, InetAddress listenAddr, FileModelS
   _dispather.route("/login", [this](auto ctx) { printf("事件 login\n"); login(ctx); });
   _dispather.route("/check", [this](auto ctx) { printf("事件 check\n");check(ctx); });
   _dispather.route("/newTask", [this](auto ctx) { printf("事件 newTask\n");newTask(ctx); });
+  _dispather.route("/finishcts", [this](auto ctx) { printf("事件 finish\n");finishcts(ctx); });
   _dispather.configDone();
 }
 
@@ -50,6 +51,7 @@ void MessageServer::login(Ctx ctx) {
 
 void MessageServer::check(Ctx ctx) {
   printf("啦啦啦\n");
+  printf("%s\n", ctx.message.c_str());
   auto clientFiles = FileModel::stringToFileMap(ctx.message);
   auto serverFiles = FileModel::scanfPath(_fms._sharedDirPath);
   auto ret = FileModel::fileMapCmper(clientFiles, serverFiles);
@@ -87,17 +89,32 @@ void MessageServer::newTask(Ctx ctx) {
   auto conn = _fileServer.newTask(ipPort, task);
   if (!conn) return;
   if (action == "loadToClient") {
-    _fileServer.sendFile(conn, [this, ctx]{
-      send(ctx.conn, "/finish", ctx.message);
+    auto co = ctx.conn;
+    auto mess = ctx.message;
+    _fileServer.sendFile(conn, [this, co, mess]{
+      printf("完成\n");
+      send(co, "/finish", mess);
     });
   } else {
     send(ctx.conn, "/ready", ctx.message);
   }
 }
 
-void MessageServer::finish(Ctx ctx) {
-  auto context = any_cast<Context>(ctx.conn->ctx());
-  close(context.currentTaskFd);
-  _fms.lockLink(context.currentTask.to, context.currentTask.name);
+void MessageServer::finishcts(Ctx ctx) {
+  std::istringstream is(ctx.message);
+  std::string ipPort, to, name;
+  is >> ipPort;
+  is >> to;
+  is >> to;
+  is >> to;
+  is >> name;
+  printf("ipPort: %s\n", ipPort.c_str());
+  auto it = _fileServer._ipConnMap.find(ipPort);
+  assert(it != _fileServer._ipConnMap.end());
+  //auto context = any_cast<FileServer::Context>(it->second->ctx());
+  printf("peeraddr: %s\n", it->second->peerAddress().toIpPort().c_str());
+  //close(context.currentTaskFd);
+  //_fms.lockLink(context.currentTask.to, context.currentTask.name);
+  _fms.lockLink(to, name);
   send(ctx.conn, "/finish", ctx.message);
 }

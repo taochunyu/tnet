@@ -29,7 +29,7 @@ std::string FileClient::newTask(Task task) {
   _currentTask = task;
   _currentTaskFinished = false;
   if (task.action == "loadToClient") {
-    _currentTaskFd = openat(_fmc._tempDirFd, task.to.c_str(), O_WRONLY | O_TRUNC, 0700);
+    _currentTaskFd = openat(_fmc._tempDirFd, task.to.c_str(), O_WRONLY, 0700);
     if (_currentTaskFd == -1) {
       LOG_SYSERR << "FileClient::newTask when loadToClient";
     }
@@ -57,6 +57,7 @@ void FileClient::sendFile(Callback cb) {
   }
   if (nread > 0 && nread < 65536) {
     send(_buffer, nread);
+    _sendFileCallback = cb;
   }
   if (nread == 0) {
     cb();

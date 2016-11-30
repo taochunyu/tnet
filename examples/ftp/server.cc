@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]) {
 
   FileServer fileServer(&loop, fileListenAddr, fileModelServer);
   MessageServer messServer(&loop, messListenAddr, fileModelServer, fileServer);
-  fileServer.start(1);
+  fileServer.start(0);
   messServer.start();
   loop.loop();
   return 0;

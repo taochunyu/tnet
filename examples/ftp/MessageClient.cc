@@ -80,27 +80,36 @@ void MessageClient::tasks(Ctx ctx) {
     is >> to;
     name = from;
     from = _fmc.createTempFileForSend(from, from);
-    _tasks.emplace_back(toClient, from, to, name);
+    _tasks.emplace_back(toServer, from, to, name);
   }
   handleTasks();
 }
 
 void MessageClient::handleTasks() {
+  printf("开始处理事件0\n");
   MutexLockGuard lck(_tasksMtx);
   auto allWorkers = _workers.callTogether();
+  printf("%lu\n", allWorkers.size());
   if (_tasks.size() == 0) {
     LOG_INFO << "nothing to do";
   }
+  printf("开始处理事件1\n");
   for (auto& it : allWorkers) {
+    printf("开始处理事件2\n");
+
     if (_tasks.size() == 0) break;
+    printf("开始处理事件3\n");
     auto task = _tasks.back();
-    auto ipPort = it->newTask(_tasks.back());
+    printf("开始处理事件4\n");
+    auto ipPort = _workers.askWorkerToDo(it, task);
+    printf("开始处理事件5\n");
     std::ostringstream os;
     os
       << ipPort << "\n" << task.action << "\n"
       << task.from << "\n" << task.to << "\n"
       << task.name << "\n";
     _tasks.pop_back();
+    printf("事件处理中\n");
     send("/newTask", os.str());
   }
 }
@@ -115,8 +124,9 @@ void MessageClient::ready(Ctx ctx) {
   is >> name;
   Task task(action, from, to, name);
   auto work = _workers.whoOwnThisTask(task);
-  work->sendFile([this, ctx] {
-    send("/finish", ctx.message);
+  auto mess = ctx.message;
+  work->sendFile([this, mess] {
+    send("/finishcts", mess);
   });
 }
 
@@ -124,10 +134,12 @@ void MessageClient::finish(Ctx ctx) {
   MutexLockGuard lck(_tasksMtx);
   std::istringstream is(ctx.message);
   std::string action, from, to, name;
+  is >> action;  // ipPort
   is >> action;
   is >> from;
   is >> to;
   is >> name;
+  LOG_INFO << "内容" <<ctx.message;
   Task task(action, from, to, name);
   auto worker = _workers.whoOwnThisTask(task);
   close(worker->_currentTaskFd);
@@ -136,6 +148,13 @@ void MessageClient::finish(Ctx ctx) {
     LOG_INFO << "Finish all tasks";
     return;
   }
-  _workers.askWorkerToDo(worker, _tasks.back());
+  auto newOne = _tasks.back();
+  auto ipPort = _workers.askWorkerToDo(worker, newOne);
   _tasks.pop_back();
+  std::ostringstream os;
+  os
+    << ipPort << "\n" << newOne.action << "\n"
+    << newOne.from << "\n" << newOne.to << "\n"
+    << newOne.name << "\n";
+  send("/newTask", os.str());
 }

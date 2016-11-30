@@ -20,12 +20,14 @@ void FileServer::start(int numThread) {
 
 const TcpConnectionPtr FileServer::newTask(std::string ipPort, Task task) {
   auto it = _ipConnMap.find(ipPort);
+  printf("ip地址 %s\n", ipPort.c_str());
   if ( it == _ipConnMap.end()) return nullptr;
   auto currentTask = task;
   auto currentTaskFinished = false;
   int currentTaskFd;
-  if (task.action == "loadToClient") {
-    currentTaskFd = openat(_fms._tempDirFd, task.to.c_str(), O_WRONLY | O_TRUNC, 0700);
+  printf("新任务%s %s %s\n", task.action.c_str(), task.to.c_str(), task.name.c_str());
+  if (task.action == "loadToServer") {
+    currentTaskFd = openat(_fms._tempDirFd, task.to.c_str(), O_WRONLY, 0700);
   } else {
     currentTaskFd = openat(_fms._tempDirFd, task.from.c_str(), O_RDONLY, 0700);
   }
@@ -50,6 +52,7 @@ void FileServer::handleConn(const TcpConnectionPtr& conn) {
 }
 
 void FileServer::onWriteCompleted(const TcpConnectionPtr& conn) {
+  printf("写完成\n");
   auto ctx = any_cast<Context>(conn->ctx());
   auto nread = read(ctx.currentTaskFd, ctx.buffer, 65536);
   if (nread == 65536) {
@@ -77,6 +80,7 @@ void FileServer::onReceiveData(const TcpConnectionPtr& conn, Buffer* buf, Timest
 void FileServer::sendFile(const TcpConnectionPtr &conn, Callback cb) {
   auto ctx = any_cast<Context>(conn->ctx());
   auto nread = read(ctx.currentTaskFd, ctx.buffer, 65536);
+  printf("发送文件%d, 大小%lu\n", ctx.currentTaskFd, nread);
   if (nread == 65536) {
     send(conn, ctx.buffer, 65536);
     ctx.callback = cb;
@@ -84,6 +88,8 @@ void FileServer::sendFile(const TcpConnectionPtr &conn, Callback cb) {
   }
   if (nread > 0 && nread < 65536) {
     send(conn, ctx.buffer, nread);
+    ctx.callback = cb;
+    conn->ctx(ctx);
   }
   if (nread == 0) {
     cb();
@@ -94,6 +100,7 @@ void FileServer::sendFile(const TcpConnectionPtr &conn, Callback cb) {
     LOG_ERROR << "FileServer::sendFile";
     close(ctx.currentTaskFd);
   }
+  printf("发送文件%d, 大小%lu\n", ctx.currentTaskFd, nread);
 }
 
 void FileServer::send(const TcpConnectionPtr& conn, char* buf, size_t len) {

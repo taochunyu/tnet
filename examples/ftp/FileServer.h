@@ -18,6 +18,7 @@ struct Context {
 }
 
 class FileServer : tnet::nocopyable {
+  friend class MessageServer;
  public:
   using Context = struct Context;
   FileServer(EventLoop* loop, InetAddress listenAddr, FileModelServer& fms);
