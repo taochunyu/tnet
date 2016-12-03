@@ -1,6 +1,10 @@
 #ifndef FILEMODEL_H
 #define FILEMODEL_H
 
+#ifndef _DARWIN_FEATURE_64_BIT_INODE
+#define _DARWIN_FEATURE_64_BIT_INODE
+#endif  // _DARWIN_FEATURE_64_BIT_INODE
+
 #include "tnet.h"
 #include <map>
 #include <string>
@@ -13,10 +17,8 @@ class FileModel : tnet::nocopyable {
   using CmpReturn = std::pair<FileNameList, FileNameList>;
 
   FileModel(const std::string path = "/tmp/fileSync");
-  virtual void readConfigFile() = 0;
   std::string createTempFileForReceive(const std::string& seed);
-  virtual std::string createTempFileForSend(const std::string& seed, const std::string& fileName) = 0;
-  virtual void lockLink(const std::string& from, const std::string& to) = 0;
+  void lockLink(const std::string& from, const std::string& to);
 
   static FileMap scanfPath(const std::string& path);
   static FileMap scanfPath(const int dirFd);
@@ -28,6 +30,8 @@ class FileModel : tnet::nocopyable {
   int _workDirFd;
   int _tempDirFd;
   std::string _workDirPath;
+  std::string _sharedDirPath;
+  int         _sharedFd;
   MutexLock _mtx;
 };
 
@@ -36,15 +40,15 @@ class FileModelServer : public FileModel {
   friend class FileServer;
  public:
   FileModelServer() : FileModel("/tmp/fileSyncServer") {
+     _sharedDirPath = "/Users/taochunyu/Desktop/server";
     _sharedFd = open(_sharedDirPath.c_str(), O_RDONLY, 0700);
   }
-  virtual void readConfigFile();
-  virtual void lockLink(const std::string& from, const std::string& to);
+  void readConfigFile();
   std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
+  void addUser(std::string, std::string);
  private:
   std::map<std::string, std::string> _usersList;
-  std::string                        _sharedDirPath = "/Users/taochunyu/Desktop/server";
-  int                                _sharedFd;
+  MutexLock                          _usersMtx;
 };
 
 class FileModelClient : public FileModel {
@@ -52,12 +56,9 @@ class FileModelClient : public FileModel {
   friend class FileClient;
  public:
   FileModelClient() : FileModel() {}
-  virtual void readConfigFile();
-  virtual void lockLink(const std::string& from, const std::string& to);
+  void readConfigFile();
   std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
  private:
-  std::string _sharedDirPath;
-  int         _sharedFd;
   std::string _username;
   std::string _password;
 };

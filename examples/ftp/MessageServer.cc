@@ -33,15 +33,14 @@ void MessageServer::send(const TcpConnectionPtr& conn, std::string method, std::
 
 void MessageServer::login(Ctx ctx) {
   std::istringstream is(ctx.message);
-  std::string username, password;
-  is >> username;
-  is >> password;
-  auto where = _fms._usersList.find(username);
-  if (where == _fms._usersList.end()) {
-    _fms._usersList.emplace(username, password);
+  std::string name, password;
+  is >> name >> password;
+  auto it = _fms._usersList.find(name);
+  if (it == _fms._usersList.end()) {
+    _fms.addUser(name, password);
     send(ctx.conn, "/logup", "success");
   } else {
-    if (where->second == password) {
+    if (it->second == password) {
       send(ctx.conn, "/login", "success");
     } else {
       send(ctx.conn, "/login", "wrong password");
@@ -50,22 +49,19 @@ void MessageServer::login(Ctx ctx) {
 }
 
 void MessageServer::check(Ctx ctx) {
-  printf("啦啦啦\n");
-  printf("%s\n", ctx.message.c_str());
   auto clientFiles = FileModel::stringToFileMap(ctx.message);
   auto serverFiles = FileModel::scanfPath(_fms._sharedDirPath);
   auto ret = FileModel::fileMapCmper(clientFiles, serverFiles);
   std::string ipPortStr = ctx.conn->peerAddress().toIpPort();
   std::ostringstream os;
+  os << ret.first.size() << "\n" << ret.second.size() << "\n";
   printf("load to client: ");
   for (auto it : ret.first) {
     printf("%s ", it.c_str());
     std::string ret = _fms.createTempFileForSend(ipPortStr, it);
     os << ret << "\n" << it << "\n";
   }
-  os << "####" << "\n";
   printf("\nload to server: ");
-
   for (auto it : ret.second) {
     printf("%s ", it.c_str());
     std::string ret = _fms.createTempFileForReceive(ipPortStr);

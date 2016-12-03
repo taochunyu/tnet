@@ -1,6 +1,26 @@
 #include "MessageClient.h"
 #include <sstream>
 
+namespace {
+  std::pair<std::string, Task> decodeIpTask(std::string& message) {
+    std::istringstream is(message);
+    std::string ipPort, action, from, to, name;
+    is >> ipPort >> action >> from >> to >> name;
+    Task task(action, from, to, name);
+    return std::make_pair(ipPort, task);
+  }
+
+  std::string encodeIpTask(std::string& ipPort, Task& task) {
+    std::ostringstream os;
+    os
+      << ipPort << "\n" << task.action << "\n"
+      << task.from << "\n" << task.to << "\n"
+      << task.name << "\n";
+    return os.str();
+  }
+
+}
+
 MessageClient::MessageClient(EventLoop* loop, InetAddress listenAddr, FileModelClient& fmc, WorkerManager& wm)
     : _loop(loop),
       _fmc(fmc),
@@ -30,6 +50,49 @@ void MessageClient::send(std::string method, std::string message) {
   }
 }
 
+void MessageClient::login(const std::string& username, const std::string& password) {
+  send("/login", username + "\n" + password);
+}
+
+void MessageClient::handleTasks() {
+  if (_tasks.size() == 0) {
+    LOG_INFO << "nothing to do";
+  }
+  auto allWorkers = _workers.callTogether();
+  for (auto& it : allWorkers) {
+    if (_tasks.size() == 0) break;
+    auto task = getOneTask();
+    auto ipPort = _workers.askWorkerToDo(it, task);
+    auto mess = encodeIpTask(ipPort, task);
+    send("/newTask", mess);
+  }
+}
+
+WorkerManager::Worker MessageClient::handleFinishedTask(Task task) {
+  auto worker = _workers.whoOwnThisTask(task);
+  if (task.action == "loadToClient") {
+    close(worker->_currentTaskFd);
+    _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name);
+  }
+  return worker;
+  // else 发送文件的文件描述符在写完成时自动关闭
+  // 拓展问题，所有临时文件的文件描述符 应该 在使用完成后自动关闭，并且删除自己，类似于raii，怎么实现？
+  // 不是很好实现
+}
+
+void MessageClient::loginSuccessCallback() {
+  printf("登录成功\n");
+  auto files = FileModel::scanfPath(_fmc._sharedDirPath);
+  auto filesString = FileModel::fileMapToString(files);
+  printf("开始与服务器核对需要同步的文件\n");
+  send("/check", filesString);
+}
+
+void MessageClient::loginFailureCallback() {
+  printf("用户名与密码不符，尝试运行fileSyncConfig重新认证用户信息\n");
+  quit();
+}
+
 void MessageClient::handleConn(const TcpConnectionPtr& conn) {
   LOG_INFO
     << conn->peerAddress().toIpPort() << " -> "
@@ -47,82 +110,41 @@ void MessageClient::handleConn(const TcpConnectionPtr& conn) {
 }
 
 void MessageClient::logup(Ctx ctx) {
-  printf("logup %s\n", ctx.message.c_str());
-}
-
-void MessageClient::login(const std::string& username, const std::string& password) {
-  send("/login", username + "\n" + password);
+  printf("系统发现你为新用户，注册成功\n");
+  loginSuccessCallback();
 }
 
 void MessageClient::login(Ctx ctx) {
-  printf("login %s\n", ctx.message.c_str());
-  if (ctx.message != "success") {
-    LOG_ERROR << "login";
+  if (ctx.message == "success") {
+    loginSuccessCallback();
+  } else {
+    loginFailureCallback();
   }
-  auto files = FileModel::scanfPath(_fmc._sharedDirPath);
-  auto filesString = FileModel::fileMapToString(files);
-  send("/check", filesString);
 }
 
 void MessageClient::tasks(Ctx ctx) {
-  std::istringstream is(ctx.message);
+  const std::string toServer("loadToServer");
+  const std::string toClient("loadToClient");
+  size_t numOfLoadToClient, numOfLoadToServer;
   std::string from, to, name;
-  std::string toServer("loadToServer");
-  std::string toClient("loadToClient");
-  while (is >> from) {
-    if (from == "####") break;
-    is >> to;
-    name = to;
-    to = _fmc.createTempFileForReceive(to);
+
+  std::istringstream is(ctx.message);
+  is >> numOfLoadToClient >> numOfLoadToServer;
+  for (size_t i = 0; i < numOfLoadToClient; i++) {
+    is >> from >> name;
+    to = _fmc.createTempFileForReceive(name);
     _tasks.emplace_back(toClient, from, to, name);
   }
-  while (is >> from) {
-    is >> to;
-    name = from;
-    from = _fmc.createTempFileForSend(from, from);
+  for (size_t i = 0; i < numOfLoadToServer; i++) {
+    is >> name >> to;
+    from = _fmc.createTempFileForSend(name, name);
     _tasks.emplace_back(toServer, from, to, name);
   }
   handleTasks();
 }
 
-void MessageClient::handleTasks() {
-  printf("开始处理事件0\n");
-  MutexLockGuard lck(_tasksMtx);
-  auto allWorkers = _workers.callTogether();
-  printf("%lu\n", allWorkers.size());
-  if (_tasks.size() == 0) {
-    LOG_INFO << "nothing to do";
-  }
-  printf("开始处理事件1\n");
-  for (auto& it : allWorkers) {
-    printf("开始处理事件2\n");
-
-    if (_tasks.size() == 0) break;
-    printf("开始处理事件3\n");
-    auto task = _tasks.back();
-    printf("开始处理事件4\n");
-    auto ipPort = _workers.askWorkerToDo(it, task);
-    printf("开始处理事件5\n");
-    std::ostringstream os;
-    os
-      << ipPort << "\n" << task.action << "\n"
-      << task.from << "\n" << task.to << "\n"
-      << task.name << "\n";
-    _tasks.pop_back();
-    printf("事件处理中\n");
-    send("/newTask", os.str());
-  }
-}
-
 void MessageClient::ready(Ctx ctx) {
-  std::istringstream is(ctx.message);
-  std::string action, from, to, name;
-  is >> action;  // ipPort
-  is >> action;
-  is >> from;
-  is >> to;
-  is >> name;
-  Task task(action, from, to, name);
+  auto task = decodeIpTask(ctx.message).second;
   auto work = _workers.whoOwnThisTask(task);
   auto mess = ctx.message;
   work->sendFile([this, mess] {
@@ -131,30 +153,24 @@ void MessageClient::ready(Ctx ctx) {
 }
 
 void MessageClient::finish(Ctx ctx) {
-  MutexLockGuard lck(_tasksMtx);
-  std::istringstream is(ctx.message);
-  std::string action, from, to, name;
-  is >> action;  // ipPort
-  is >> action;
-  is >> from;
-  is >> to;
-  is >> name;
-  LOG_INFO << "内容" <<ctx.message;
-  Task task(action, from, to, name);
-  auto worker = _workers.whoOwnThisTask(task);
-  close(worker->_currentTaskFd);
-  _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name);
+  auto task = decodeIpTask(ctx.message).second;
+  auto worker = handleFinishedTask(task);
+  // next task
   if (_tasks.size() == 0) {
     LOG_INFO << "Finish all tasks";
     return;
   }
-  auto newOne = _tasks.back();
-  auto ipPort = _workers.askWorkerToDo(worker, newOne);
+  auto newTask = getOneTask();
+  auto ipPort = _workers.askWorkerToDo(worker, newTask);
+  auto mess = encodeIpTask(ipPort, newTask);
+  send("/newTask", mess);
+}
+
+// helper
+Task MessageClient::getOneTask() {
+  MutexLockGuard lck(_tasksMtx);
+  assert(_tasks.size() != 0);
+  auto temp = _tasks.back();
   _tasks.pop_back();
-  std::ostringstream os;
-  os
-    << ipPort << "\n" << newOne.action << "\n"
-    << newOne.from << "\n" << newOne.to << "\n"
-    << newOne.name << "\n";
-  send("/newTask", os.str());
+  return temp;
 }

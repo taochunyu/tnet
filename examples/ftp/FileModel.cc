@@ -148,6 +148,30 @@ std::string FileModel::getUniqueName(const std::string &seed, int dirFd) {
   return name;
 }
 
+void FileModel::lockLink(const std::string& from, const std::string& to) {
+  MutexLockGuard lck(_mtx);
+  struct stat fromStat, toStat;
+  int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, AT_SYMLINK_FOLLOW);
+  if (ret == -1) {
+    printf("%d %s %s\n", _tempDirFd, from.c_str(), to.c_str());
+    LOG_SYSERR << "FileModel::lockLink " << strerror(errno) << " " << from;
+  }
+  std::string toPath = _sharedDirPath + "/" + to;
+  ret = stat(toPath.c_str(), &toStat);
+  printf("%s\n", toPath.c_str());
+  if (ret == -1) {
+    LOG_SYSERR << "FileModel::lockLink";
+  }
+  if (fromStat.st_birthtime < toStat.st_birthtime) {
+    printf("删除\n");
+    unlink(toPath.c_str());
+    linkat(_tempDirFd, from.c_str(), _sharedFd, to.c_str(), AT_SYMLINK_FOLLOW);
+  } else {
+    printf("不删除\n");
+    unlinkat(_tempDirFd, from.c_str(), 0);
+  }
+}
+
 void FileModelServer::readConfigFile() {
   std::ifstream file;
   file.open(_workDirPath + "/config");
@@ -165,30 +189,16 @@ void FileModelServer::readConfigFile() {
 std::string FileModelServer::createTempFileForSend(const std::string& seed, const std::string& fileName) {
   auto name = getUniqueName(seed, _tempDirFd);
   int ret = linkat(_sharedFd, fileName.c_str(), _tempDirFd, name.c_str(), AT_SYMLINK_FOLLOW);
+  printf("没阻塞\n");
   if (ret == -1) {
     LOG_ERROR << "FileModel::createTempFileForSend";
   }
   return name;
 }
 
-void FileModelServer::lockLink(const std::string& from, const std::string& to) {
-  MutexLockGuard lck(_mtx);
-  struct stat fromStat, toStat;
-  int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, 0);
-  if (ret == -1) {
-    LOG_SYSERR << "FileModel::lockLink";
-  }
-  std::string toPath = _sharedDirPath + to;
-  ret = stat(toPath.c_str(), &toStat);
-  if (ret == -1) {
-    LOG_SYSERR << "FileModel::lockLink";
-  }
-  if (fromStat.st_atime > toStat.st_atime) {
-    unlink(toPath.c_str());
-    linkat(_tempDirFd, from.c_str(), _sharedFd, to.c_str(), AT_SYMLINK_FOLLOW);
-  } else {
-    unlinkat(_tempDirFd, from.c_str(), 0);
-  }
+void FileModelServer::addUser(std::string name, std::string password) {
+  MutexLockGuard lck(_usersMtx);
+  _usersList.emplace(name, password);
 }
 
 void FileModelClient::readConfigFile() {
@@ -220,32 +230,8 @@ void FileModelClient::readConfigFile() {
 std::string FileModelClient::createTempFileForSend(const std::string& seed, const std::string& fileName) {
   auto name = getUniqueName(seed, _tempDirFd);
   int ret = linkat(_sharedFd, fileName.c_str(), _tempDirFd, name.c_str(), AT_SYMLINK_FOLLOW);
-  printf("没阻塞\n");
   if (ret == -1) {
     LOG_ERROR << "FileModel::createTempFileForSend";
   }
   return name;
-}
-
-void FileModelClient::lockLink(const std::string& from, const std::string& to) {
-  MutexLockGuard lck(_mtx);
-  struct stat fromStat, toStat;
-  int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, AT_SYMLINK_NOFOLLOW);
-  if (ret == -1) {
-    LOG_SYSERR << "FileModel::lockLink " << strerror(errno) << " " << from;
-  }
-  std::string toPath = _sharedDirPath + "/" + to;
-  ret = stat(toPath.c_str(), &toStat);
-  printf("%s\n", toPath.c_str());
-  if (ret == -1) {
-    LOG_SYSERR << "FileModel::lockLink";
-  }
-  if (fromStat.st_atime > toStat.st_atime) {
-    printf("删除\n");
-    //unlink(toPath.c_str());
-    linkat(_tempDirFd, from.c_str(), _sharedFd, to.c_str(), AT_SYMLINK_FOLLOW);
-  } else {
-    printf("不删除\n");
-    unlinkat(_tempDirFd, from.c_str(), 0);
-  }
 }

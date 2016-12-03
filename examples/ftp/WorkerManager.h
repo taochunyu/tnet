@@ -7,6 +7,7 @@
 #include "FileClient.h"
 
 class WorkerManager : tnet::nocopyable {
+  friend class MessageClient;
  public:
   using Worker = std::shared_ptr<FileClient>;
   explicit WorkerManager(InetAddress fileServer, FileModelClient& fmc, size_t numWorker = 1) {
