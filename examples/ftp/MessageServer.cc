@@ -56,18 +56,26 @@ void MessageServer::check(Ctx ctx) {
   std::ostringstream os;
   os << ret.first.size() << "\n" << ret.second.size() << "\n";
   printf("load to client: ");
-  for (auto it : ret.first) {
+  printf("容器大小：%lu %lu\n", ret.first.size(), ret.second.size());
+  for (size_t i = 0; i < ret.first.size(); i++) {
+    auto it = ret.first[i];
+    printf("循环一次1\n");
     printf("%s ", it.c_str());
     std::string ret = _fms.createTempFileForSend(ipPortStr, it);
+    printf("循环一次2\n");
     os << ret << "\n" << it << "\n";
+    printf("循环一次3\n");
   }
   printf("\nload to server: ");
-  for (auto it : ret.second) {
-    printf("%s ", it.c_str());
+  for (size_t i = 0; i < ret.second.size(); i++) {
+    auto it = ret.second[i];
+    printf("%s \n", it.c_str());
     std::string ret = _fms.createTempFileForReceive(ipPortStr);
+    printf("可\n");
     os << it << "\n" << ret << "\n";
   }
   printf("\n");
+  LOG_INFO << "开始发送\n";
   send(ctx.conn, "/tasks", os.str());
 }
 

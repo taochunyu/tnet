@@ -47,12 +47,16 @@ FileModel::FileModel(const std::string path) {
 }
 
 std::string FileModel::createTempFileForReceive(const std::string& seed) {
+  printf("执行receive\n");
   auto name = getUniqueName(seed, _tempDirFd);
-  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT, 0700);
+  printf("recive阻塞了\n");
+  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT | O_TRUNC, 0700);
   if (ret == -1) {
     LOG_ERROR << "FileModel::createTempFileForReceive";
   }
+  printf("recive没阻塞\n");
   close(ret);
+  printf("close没阻塞\n");
   return name;
 }
 
@@ -88,6 +92,7 @@ FileModel::FileMap FileModel::scanfPath(const int dirFd) {
     LOG_ERROR << "FileModel::scanfPath - no accessed dir: " << dirFd;
   }
   while ((dp = readdir(dirPtr)) != nullptr) {
+    printf("loop\n");
     int fd = openat(dirFd, dp->d_name, O_RDONLY, 0700);
     struct stat temp;
     int ret = fstat(fd, &temp);
@@ -151,7 +156,7 @@ std::string FileModel::getUniqueName(const std::string &seed, int dirFd) {
 void FileModel::lockLink(const std::string& from, const std::string& to) {
   MutexLockGuard lck(_mtx);
   struct stat fromStat, toStat;
-  int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, AT_SYMLINK_FOLLOW);
+  int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, 0);
   if (ret == -1) {
     printf("%d %s %s\n", _tempDirFd, from.c_str(), to.c_str());
     LOG_SYSERR << "FileModel::lockLink " << strerror(errno) << " " << from;
@@ -160,9 +165,14 @@ void FileModel::lockLink(const std::string& from, const std::string& to) {
   ret = stat(toPath.c_str(), &toStat);
   printf("%s\n", toPath.c_str());
   if (ret == -1) {
-    LOG_SYSERR << "FileModel::lockLink";
+    if (errno == 2) {
+      toStat.st_birthtime = 0;
+    } else {
+      LOG_SYSERR << "FileModel::lockLink " << strerror(errno);
+    }
+
   }
-  if (fromStat.st_birthtime < toStat.st_birthtime) {
+  if (fromStat.st_birthtime > toStat.st_birthtime) {
     printf("删除\n");
     unlink(toPath.c_str());
     linkat(_tempDirFd, from.c_str(), _sharedFd, to.c_str(), AT_SYMLINK_FOLLOW);
@@ -188,6 +198,7 @@ void FileModelServer::readConfigFile() {
 
 std::string FileModelServer::createTempFileForSend(const std::string& seed, const std::string& fileName) {
   auto name = getUniqueName(seed, _tempDirFd);
+  printf("阻塞了\n");
   int ret = linkat(_sharedFd, fileName.c_str(), _tempDirFd, name.c_str(), AT_SYMLINK_FOLLOW);
   printf("没阻塞\n");
   if (ret == -1) {
