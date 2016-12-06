@@ -7,8 +7,10 @@
 
 class FileClient : tnet::nocopyable {
   friend class MessageClient;
+  friend class WorkerManager;
  public:
-  FileClient(EventLoop* loop, InetAddress serverAddr, FileModelClient& fmc);
+  using Next = std::function<bool(Task)>;
+  FileClient(EventLoop* loop, InetAddress serverAddr, FileModelClient& fmc, Next next);
   void connect();
   bool connected();
   std::string newTask(Task task);
@@ -23,10 +25,12 @@ class FileClient : tnet::nocopyable {
   EventLoop* _loop;
   TcpClient _client;
   FileModelClient& _fmc;
+  Next _nextTask;
   TcpConnectionPtr _conn;
   MutexLock _mtx;
   Task _currentTask;
   int _currentTaskFd;
+  off_t _currentTaskSize;
   bool _currentTaskFinished;
   char _buffer[65536];
   Callback _sendFileCallback;

@@ -11,8 +11,10 @@ struct Context {
   Task currentTask;
   int  currentTaskFd;
   bool currentTaskFinished;
+  off_t currentTaskSize;
+  Callback loadToServerFin;
   char buffer[65535];
-  Callback callback;
+  Callback loadToClientFin;
 };
 
 }
@@ -23,7 +25,7 @@ class FileServer : tnet::nocopyable {
   using Context = struct Context;
   FileServer(EventLoop* loop, InetAddress listenAddr, FileModelServer& fms);
   void start(int numThread = 1);
-  const TcpConnectionPtr newTask(std::string ipPort, Task task);
+  const TcpConnectionPtr newTask(std::string ipPort, Task task, Callback cb);
   void sendFile(const TcpConnectionPtr& conn, Callback cb);
   void send(const TcpConnectionPtr& conn, char* buf, size_t len);
  private:

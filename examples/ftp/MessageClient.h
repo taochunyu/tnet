@@ -28,8 +28,6 @@ class MessageClient : tnet::nocopyable {
   void ready(Ctx ctx);
   void finish(Ctx ctx);
 
-  // helper
-  Task getOneTask();
 
   EventLoop*        _loop;
   FileModelClient&  _fmc;
@@ -43,7 +41,6 @@ class MessageClient : tnet::nocopyable {
   std::string       _username;
   std::string       _password;
   std::vector<Task> _tasks;
-  MutexLock         _tasksMtx;
 };
 
 #endif  // MESSAGECLIENT_H

@@ -1,26 +1,6 @@
 #include "MessageClient.h"
 #include <sstream>
 
-namespace {
-  std::pair<std::string, Task> decodeIpTask(std::string& message) {
-    std::istringstream is(message);
-    std::string ipPort, action, from, to, name;
-    is >> ipPort >> action >> from >> to >> name;
-    Task task(action, from, to, name);
-    return std::make_pair(ipPort, task);
-  }
-
-  std::string encodeIpTask(std::string& ipPort, Task& task) {
-    std::ostringstream os;
-    os
-      << ipPort << "\n" << task.action << "\n"
-      << task.from << "\n" << task.to << "\n"
-      << task.name << "\n";
-    return os.str();
-  }
-
-}
-
 MessageClient::MessageClient(EventLoop* loop, InetAddress listenAddr, FileModelClient& fmc, WorkerManager& wm)
     : _loop(loop),
       _fmc(fmc),
@@ -58,26 +38,8 @@ void MessageClient::handleTasks() {
   if (_tasks.size() == 0) {
     LOG_INFO << "nothing to do";
   }
-  auto allWorkers = _workers.callTogether();
-  for (auto& it : allWorkers) {
-    if (_tasks.size() == 0) break;
-    auto task = getOneTask();
-    auto ipPort = _workers.askWorkerToDo(it, task);
-    auto mess = encodeIpTask(ipPort, task);
-    send("/newTask", mess);
-  }
-}
-
-WorkerManager::Worker MessageClient::handleFinishedTask(Task task) {
-  auto worker = _workers.whoOwnThisTask(task);
-  if (task.action == "loadToClient") {
-    close(worker->_currentTaskFd);
-    _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name);
-  }
-  return worker;
-  // else 发送文件的文件描述符在写完成时自动关闭
-  // 拓展问题，所有临时文件的文件描述符 应该 在使用完成后自动关闭，并且删除自己，类似于raii，怎么实现？
-  // 不是很好实现
+  _workers.setSender([this](auto a, auto b) { send(a, b); });
+  _workers.doThoseTasks(_tasks);
 }
 
 void MessageClient::loginSuccessCallback() {
@@ -126,51 +88,33 @@ void MessageClient::tasks(Ctx ctx) {
   const std::string toServer("loadToServer");
   const std::string toClient("loadToClient");
   size_t numOfLoadToClient, numOfLoadToServer;
-  std::string from, to, name;
+  std::string from, to, name, size, create;
 
   std::istringstream is(ctx.message);
   is >> numOfLoadToClient >> numOfLoadToServer;
   for (size_t i = 0; i < numOfLoadToClient; i++) {
-    is >> from >> name;
+    is >> from >> name >> create >> size;
     to = _fmc.createTempFileForReceive(name);
-    _tasks.emplace_back(toClient, from, to, name);
+    _tasks.emplace_back(toClient, from, to, name, size, create);
   }
   for (size_t i = 0; i < numOfLoadToServer; i++) {
-    is >> name >> to;
+    is >> name >> create >> size >> to;
     from = _fmc.createTempFileForSend(name, name);
-    _tasks.emplace_back(toServer, from, to, name);
+    LOG_INFO << from << to << name << size << create;
+    _tasks.emplace_back(toServer, from, to, name, size, create);
   }
   handleTasks();
 }
 
 void MessageClient::ready(Ctx ctx) {
   auto task = decodeIpTask(ctx.message).second;
-  auto work = _workers.whoOwnThisTask(task);
   auto mess = ctx.message;
-  work->sendFile([this, mess] {
-    send("/finishcts", mess);
+  _workers.ready(task, [this, mess] {
+    printf("完成\n");
   });
 }
 
 void MessageClient::finish(Ctx ctx) {
   auto task = decodeIpTask(ctx.message).second;
-  auto worker = handleFinishedTask(task);
-  // next task
-  if (_tasks.size() == 0) {
-    LOG_INFO << "Finish all tasks";
-    return;
-  }
-  auto newTask = getOneTask();
-  auto ipPort = _workers.askWorkerToDo(worker, newTask);
-  auto mess = encodeIpTask(ipPort, newTask);
-  send("/newTask", mess);
-}
-
-// helper
-Task MessageClient::getOneTask() {
-  MutexLockGuard lck(_tasksMtx);
-  assert(_tasks.size() != 0);
-  auto temp = _tasks.back();
-  _tasks.pop_back();
-  return temp;
+  _workers.nextTask(task);
 }

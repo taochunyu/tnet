@@ -2,10 +2,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-FileClient::FileClient(EventLoop* loop, InetAddress serverAddr, FileModelClient& fmc)
+FileClient::FileClient(EventLoop* loop, InetAddress serverAddr, FileModelClient& fmc, Next next)
     : _loop(loop),
       _client(_loop, serverAddr, "FileClient"),
       _fmc(fmc),
+      _nextTask(next),
       _currentTask()
 {
   _client.onConnection([this](auto conn){ handleConn(conn); });
@@ -28,11 +29,13 @@ std::string FileClient::newTask(Task task) {
   MutexLockGuard lck(_mtx);
   _currentTask = task;
   _currentTaskFinished = false;
+  _currentTaskSize = -1;
   if (task.action == "loadToClient") {
     _currentTaskFd = openat(_fmc._tempDirFd, task.to.c_str(), O_WRONLY, 0700);
     if (_currentTaskFd == -1) {
       LOG_SYSERR << "FileClient::newTask when loadToClient";
     }
+    _currentTaskSize = std::stoll(task.size);
   }
   if (task.action == "loadToServer") {
     _currentTaskFd = openat(_fmc._tempDirFd, task.from.c_str(), O_RDONLY, 0700);
@@ -113,5 +116,18 @@ void FileClient::onWriteCompleted(const TcpConnectionPtr& conn) {
 }
 
 void FileClient::onReceiveData(const TcpConnectionPtr& conn, Buffer* buf, Timestamp receiveTime) {
-  write(_currentTaskFd, buf->peek(), buf->readableBytes());
+  int nwrite = write(_currentTaskFd, buf->peek(), buf->readableBytes());
+  buf->retrieveAll();
+  off_t res = lseek(_currentTaskFd, 0, SEEK_CUR);
+  if (res == -1) {
+    LOG_SYSERR << "lseek";
+  }
+  printf("完成情况：%d %lld %lld\n", nwrite, res, _currentTaskSize);
+  if (res >= _currentTaskSize) {
+    _currentTaskFinished = true;
+    auto hasNext = _nextTask(_currentTask);
+    if (!hasNext) {
+      _loop->quit();
+    }
+  }
 }

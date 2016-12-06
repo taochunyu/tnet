@@ -18,20 +18,22 @@ void FileServer::start(int numThread) {
   _server.start();
 }
 
-const TcpConnectionPtr FileServer::newTask(std::string ipPort, Task task) {
+const TcpConnectionPtr FileServer::newTask(std::string ipPort, Task task, Callback cb) {
   auto it = _ipConnMap.find(ipPort);
   printf("ip地址 %s\n", ipPort.c_str());
   if ( it == _ipConnMap.end()) return nullptr;
   auto currentTask = task;
   auto currentTaskFinished = false;
   int currentTaskFd;
-  printf("新任务%s %s %s\n", task.action.c_str(), task.to.c_str(), task.name.c_str());
+  off_t currentTaskSize = -1;
+  printf("新任务%s %s %s %s %s %s\n", task.action.c_str(), task.from.c_str(), task.to.c_str(), task.name.c_str(), task.size.c_str(), task.create.c_str());
   if (task.action == "loadToServer") {
     currentTaskFd = openat(_fms._tempDirFd, task.to.c_str(), O_WRONLY, 0700);
+    currentTaskSize = std::stoll(task.size);
   } else {
     currentTaskFd = openat(_fms._tempDirFd, task.from.c_str(), O_RDONLY, 0700);
   }
-  Context current = { currentTask, currentTaskFd, currentTaskFinished};
+  Context current = { currentTask, currentTaskFd, currentTaskFinished, currentTaskSize, cb };
   it->second->ctx(current);
   return it->second;
 }
@@ -62,7 +64,7 @@ void FileServer::onWriteCompleted(const TcpConnectionPtr& conn) {
     send(conn, ctx.buffer, nread);
   }
   if (nread == 0) {
-    ctx.callback();
+    ctx.loadToClientFin();
     close(ctx.currentTaskFd);
     unlinkat(_fms._tempDirFd, ctx.currentTask.name.c_str(), 0);
   }
@@ -74,7 +76,19 @@ void FileServer::onWriteCompleted(const TcpConnectionPtr& conn) {
 
 void FileServer::onReceiveData(const TcpConnectionPtr& conn, Buffer* buf, Timestamp receiveTime) {
   Context ctx = any_cast<Context>(conn->ctx());
-  write(ctx.currentTaskFd, buf->peek(), buf->readableBytes());
+  int nwrite = write(ctx.currentTaskFd, buf->peek(), buf->readableBytes());
+  buf->retrieveAll();
+  off_t res = lseek(ctx.currentTaskFd, 0, SEEK_CUR);
+  if (res == -1) {
+    LOG_SYSERR << "lseek";
+  }
+  printf("完成情况：%d %lld %lld\n", nwrite, res, ctx.currentTaskSize);
+  if (res >= ctx.currentTaskSize) {
+    ctx.currentTaskFinished = true;
+    printf("硬连接 %s %s\n", ctx.currentTask.to.c_str(), ctx.currentTask.name.c_str());
+    _fms.lockLink(ctx.currentTask.to, ctx.currentTask.name);
+    ctx.loadToServerFin();
+  }
 }
 
 void FileServer::sendFile(const TcpConnectionPtr &conn, Callback cb) {
@@ -83,12 +97,12 @@ void FileServer::sendFile(const TcpConnectionPtr &conn, Callback cb) {
   printf("发送文件%d, 大小%lu\n", ctx.currentTaskFd, nread);
   if (nread == 65536) {
     send(conn, ctx.buffer, 65536);
-    ctx.callback = cb;
+    ctx.loadToClientFin = cb;
     conn->ctx(ctx);
   }
   if (nread > 0 && nread < 65536) {
     send(conn, ctx.buffer, nread);
-    ctx.callback = cb;
+    ctx.loadToClientFin = cb;
     conn->ctx(ctx);
   }
   if (nread == 0) {

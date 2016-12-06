@@ -3,6 +3,7 @@ set(server_SRC
   FileModel.cc
   FileServer.cc
   MessageServer.cc
+  Task.cc
 )
 
 set(client_SRC
@@ -10,6 +11,7 @@ set(client_SRC
   FileModel.cc
   FileClient.cc
   MessageClient.cc
+  Task.cc
 )
 
 add_executable(server ${server_SRC})

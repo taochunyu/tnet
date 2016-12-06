@@ -46,19 +46,6 @@ FileModel::FileModel(const std::string path) {
   _tempDirFd = createDirAndReturnFdAt(_workDirFd, "temp");
 }
 
-std::string FileModel::createTempFileForReceive(const std::string& seed) {
-  printf("执行receive\n");
-  auto name = getUniqueName(seed, _tempDirFd);
-  printf("recive阻塞了\n");
-  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT | O_TRUNC, 0700);
-  if (ret == -1) {
-    LOG_ERROR << "FileModel::createTempFileForReceive";
-  }
-  printf("recive没阻塞\n");
-  close(ret);
-  printf("close没阻塞\n");
-  return name;
-}
 
 FileModel::FileMap FileModel::scanfPath(const std::string& path) {
   FileMap result;
@@ -77,7 +64,7 @@ FileModel::FileMap FileModel::scanfPath(const std::string& path) {
     }
     if (S_ISREG(temp.st_mode) && std::string(dp->d_name) != ".DS_Store") {
       char buf[64];
-      sprintf(buf, "%lu", temp.st_mtime);
+      sprintf(buf, "%lu\n%lld", temp.st_mtime, temp.st_size);
       result.emplace(dp->d_name, std::string(buf));
     }
   }
@@ -101,7 +88,7 @@ FileModel::FileMap FileModel::scanfPath(const int dirFd) {
     }
     if (S_ISREG(temp.st_mode) && std::string(dp->d_name) != ".DS_Store") {
       char buf[64];
-      sprintf(buf, "%lu", temp.st_mtime);
+      sprintf(buf, "%lu\n%lld", temp.st_mtime, temp.st_size);
       result.emplace(dp->d_name, std::string(buf));
     }
   }
@@ -119,10 +106,10 @@ std::string FileModel::fileMapToString(const FileModel::FileMap& fileMap) {
 FileModel::FileMap FileModel::stringToFileMap(const std::string& str) {
   FileMap result;
   std::istringstream is(str);
-  std::string ls, rs;
-  while (is >> ls) {
-    is >> rs;
-    result.emplace(ls, rs);
+  std::string name, create, size;
+  while (is >> name) {
+    is >> create >> size;
+    result.emplace(name, create + "\n" + size);
   }
   return result;
 }
@@ -132,25 +119,21 @@ FileModel::CmpReturn FileModel::fileMapCmper(const FileMap& client, const FileMa
   for (auto& it : server) {
     auto i = client.find(it.first);
     if (i == client.end() || it.second > i->second) {
-      loadToClient.push_back(it.first);
+      loadToClient.push_back(it.first + "\n" + it.second);
     }
   }
   for (auto& it : client) {
     auto i = server.find(it.first);
     if (i == server.end() || it.second > i->second) {
-      loadToServer.push_back(it.first);
+      loadToServer.push_back(it.first + "\n" + it.second);
     }
   }
   return CmpReturn(loadToClient, loadToServer);
 }
 
 std::string FileModel::getUniqueName(const std::string &seed, int dirFd) {
-  auto files = scanfPath(dirFd);
-  auto name = getName(seed);
-  while (files.find(name) != files.end()) {
-    auto name = getName(seed);
-  }
-  return name;
+  (void)dirFd;
+  return getName(seed);
 }
 
 void FileModel::lockLink(const std::string& from, const std::string& to) {
@@ -196,13 +179,27 @@ void FileModelServer::readConfigFile() {
   file.close();
 }
 
+std::string FileModelServer::createTempFileForReceive(const std::string& seed, const std::string& fileName) {
+  printf("执行receive\n");
+  auto name = getUniqueName(seed + ":" + fileName, _tempDirFd);
+  printf("recive阻塞了\n");
+  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT | O_TRUNC, 0700);
+  if (ret == -1) {
+    LOG_ERROR << "FileModel::createTempFileForReceive";
+  }
+  printf("recive没阻塞\n");
+  close(ret);
+  printf("close没阻塞\n");
+  return name;
+}
+
 std::string FileModelServer::createTempFileForSend(const std::string& seed, const std::string& fileName) {
-  auto name = getUniqueName(seed, _tempDirFd);
-  printf("阻塞了\n");
+  auto name = getUniqueName(seed + ":" + fileName, _tempDirFd);
+  printf("阻塞了 %d %s\n", _sharedFd, fileName.c_str());
   int ret = linkat(_sharedFd, fileName.c_str(), _tempDirFd, name.c_str(), AT_SYMLINK_FOLLOW);
   printf("没阻塞\n");
   if (ret == -1) {
-    LOG_ERROR << "FileModel::createTempFileForSend";
+    LOG_ERROR << "FileModel::createTempFileForSend " << strerror(errno);
   }
   return name;
 }
@@ -236,6 +233,20 @@ void FileModelClient::readConfigFile() {
   }
   file.close();
   _sharedFd = open(_sharedDirPath.c_str(), O_RDONLY, 0700);
+}
+
+std::string FileModelClient::createTempFileForReceive(const std::string& seed) {
+  printf("执行receive\n");
+  auto name = getUniqueName(seed, _tempDirFd);
+  printf("recive阻塞了\n");
+  int ret = openat(_tempDirFd, name.c_str(), O_RDONLY | O_CREAT | O_TRUNC, 0700);
+  if (ret == -1) {
+    LOG_ERROR << "FileModel::createTempFileForReceive";
+  }
+  printf("recive没阻塞\n");
+  close(ret);
+  printf("close没阻塞\n");
+  return name;
 }
 
 std::string FileModelClient::createTempFileForSend(const std::string& seed, const std::string& fileName) {

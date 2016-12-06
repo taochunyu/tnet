@@ -17,7 +17,6 @@ class FileModel : tnet::nocopyable {
   using CmpReturn = std::pair<FileNameList, FileNameList>;
 
   FileModel(const std::string path = "/tmp/fileSync");
-  std::string createTempFileForReceive(const std::string& seed);
   void lockLink(const std::string& from, const std::string& to);
 
   static FileMap scanfPath(const std::string& path);
@@ -44,6 +43,7 @@ class FileModelServer : public FileModel {
     _sharedFd = open(_sharedDirPath.c_str(), O_RDONLY, 0700);
   }
   void readConfigFile();
+  std::string createTempFileForReceive(const std::string& seed, const std::string& name);
   std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
   void addUser(std::string, std::string);
  private:
@@ -57,6 +57,7 @@ class FileModelClient : public FileModel {
  public:
   FileModelClient() : FileModel() {}
   void readConfigFile();
+  std::string createTempFileForReceive(const std::string& seed);
   std::string createTempFileForSend(const std::string& seed, const std::string& fileName);
  private:
   std::string _username;
