@@ -5,6 +5,7 @@
 #include "Task.h"
 #include "FileModel.h"
 #include "FileClient.h"
+#include "Console.h"
 
 class WorkerManager : tnet::nocopyable {
   friend class MessageClient;
@@ -67,7 +68,7 @@ class WorkerManager : tnet::nocopyable {
     MutexLockGuard lck(_finMtx);
     ++_finished;
     if (_finished == _all) {
-      printf("Finish all tasks\n");
+      console("同步完成\n");
       exit(0);
     }
   }
@@ -81,13 +82,13 @@ class WorkerManager : tnet::nocopyable {
   }
   std::function<bool(Task)> whenWorkerFinishedTask() {
     return [this](auto task)->bool{
-      finishOne();
       auto worker = whoOwnThisTask(task);
       printf("我执行了\n");
       if (task.action == "loadToClient") {
         close(worker->_currentTaskFd);
         _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name);
       }
+      finishOne();
       if (_tasks.size() == 0) {
         LOG_INFO << "Finish all tasks";
         return false;

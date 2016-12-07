@@ -1,4 +1,5 @@
 #include "MessageClient.h"
+#include "Console.h"
 #include <sstream>
 
 MessageClient::MessageClient(EventLoop* loop, InetAddress listenAddr, FileModelClient& fmc, WorkerManager& wm)
@@ -43,15 +44,15 @@ void MessageClient::handleTasks() {
 }
 
 void MessageClient::loginSuccessCallback() {
-  printf("登录成功\n");
+  console("登录成功\n");
   auto files = FileModel::scanfPath(_fmc._sharedDirPath);
   auto filesString = FileModel::fileMapToString(files);
-  printf("开始与服务器核对需要同步的文件\n");
+  console("开始与服务器核对需要同步的文件\n");
   send("/check", filesString);
 }
 
 void MessageClient::loginFailureCallback() {
-  printf("用户名与密码不符，尝试运行fileSyncConfig重新认证用户信息\n");
+  console("用户名与密码不符，尝试运行fileSyncConfig重新认证用户信息\n");
   quit();
 }
 
@@ -72,7 +73,7 @@ void MessageClient::handleConn(const TcpConnectionPtr& conn) {
 }
 
 void MessageClient::logup(Ctx ctx) {
-  printf("系统发现你为新用户，注册成功\n");
+  console("系统发现你为新用户，注册成功\n");
   loginSuccessCallback();
 }
 
@@ -85,6 +86,7 @@ void MessageClient::login(Ctx ctx) {
 }
 
 void MessageClient::tasks(Ctx ctx) {
+  console("核对完成\n");
   const std::string toServer("loadToServer");
   const std::string toClient("loadToClient");
   size_t numOfLoadToClient, numOfLoadToServer;
