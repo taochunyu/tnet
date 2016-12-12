@@ -38,6 +38,8 @@ void MessageClient::login(const std::string& username, const std::string& passwo
 void MessageClient::handleTasks() {
   if (_tasks.size() == 0) {
     LOG_INFO << "nothing to do";
+    console("没有需要同步的文件\n");
+    exit(0);
   }
   _workers.setSender([this](auto a, auto b) { send(a, b); });
   _workers.doThoseTasks(_tasks);

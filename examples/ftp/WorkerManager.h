@@ -86,7 +86,7 @@ class WorkerManager : tnet::nocopyable {
       printf("我执行了\n");
       if (task.action == "loadToClient") {
         close(worker->_currentTaskFd);
-        _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name);
+        _fmc.lockLink(worker->_currentTask.to, worker->_currentTask.name, worker->_currentTask.create);
       }
       finishOne();
       if (_tasks.size() == 0) {

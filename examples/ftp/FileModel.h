@@ -17,7 +17,7 @@ class FileModel : tnet::nocopyable {
   using CmpReturn = std::pair<FileNameList, FileNameList>;
 
   FileModel(const std::string path = "/tmp/fileSync");
-  void lockLink(const std::string& from, const std::string& to);
+  void lockLink(const std::string& from, const std::string& to, const std::string& create);
 
   static FileMap scanfPath(const std::string& path);
   static FileMap scanfPath(const int dirFd);

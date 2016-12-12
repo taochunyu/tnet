@@ -136,7 +136,7 @@ std::string FileModel::getUniqueName(const std::string &seed, int dirFd) {
   return getName(seed);
 }
 
-void FileModel::lockLink(const std::string& from, const std::string& to) {
+void FileModel::lockLink(const std::string& from, const std::string& to, const std::string& create) {
   MutexLockGuard lck(_mtx);
   struct stat fromStat, toStat;
   int ret = fstatat(_tempDirFd, from.c_str(), &fromStat, 0);
@@ -153,12 +153,18 @@ void FileModel::lockLink(const std::string& from, const std::string& to) {
     } else {
       LOG_SYSERR << "FileModel::lockLink " << strerror(errno);
     }
-
   }
   if (fromStat.st_birthtime > toStat.st_birthtime) {
     printf("删除\n");
     unlink(toPath.c_str());
     linkat(_tempDirFd, from.c_str(), _sharedFd, to.c_str(), AT_SYMLINK_FOLLOW);
+    struct timeval t, ts[2];
+    t.tv_sec = static_cast<__darwin_time_t>(std::stol(create));
+    t.tv_usec = 0;
+    ts[0] = t;
+    ts[1] = t;
+    std::string p = _sharedDirPath + "/" + to;
+    utimes(p.c_str(), ts);
   } else {
     printf("不删除\n");
     unlinkat(_tempDirFd, from.c_str(), 0);

@@ -86,7 +86,7 @@ void FileServer::onReceiveData(const TcpConnectionPtr& conn, Buffer* buf, Timest
   if (res >= ctx.currentTaskSize) {
     ctx.currentTaskFinished = true;
     printf("硬连接 %s %s\n", ctx.currentTask.to.c_str(), ctx.currentTask.name.c_str());
-    _fms.lockLink(ctx.currentTask.to, ctx.currentTask.name);
+    _fms.lockLink(ctx.currentTask.to, ctx.currentTask.name, ctx.currentTask.create);
     ctx.loadToServerFin();
   }
 }
