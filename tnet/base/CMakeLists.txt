@@ -10,5 +10,5 @@ set(base_SRCS
   Timestamp.cc
 )
 
-add_library(tnet_base SHARED ${base_SRCS})
+add_library(tnet_base ${base_SRCS})
 set_target_properties(tnet_base PROPERTIES COMPILE_FLAGS "-std=c++0x")
